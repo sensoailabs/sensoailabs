@@ -1,69 +1,192 @@
-# React + TypeScript + Vite
+# Senso AI Labs - Sistema de Autenticação
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sistema de autenticação corporativo da Sensorama Design, desenvolvido com React, TypeScript, Tailwind CSS e Supabase.
 
-Currently, two official plugins are available:
+## 🚀 Tecnologias
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Frontend**: React 18 + TypeScript + Vite
+- **UI**: shadcn/ui + Tailwind CSS
+- **Backend**: Supabase (PostgreSQL + Edge Functions)
+- **Autenticação**: API REST personalizada
+- **Controle de Versão**: Git + GitHub
 
-## Expanding the ESLint configuration
+## 📋 Funcionalidades
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### ✅ Implementadas
+- [x] Página de cadastro responsiva
+- [x] Validações em tempo real
+- [x] API REST para cadastro de usuários
+- [x] Banco de dados PostgreSQL com RLS
+- [x] Validação de domínio corporativo (@sensoramadesign.com.br)
+- [x] Critérios rigorosos de segurança para senhas
+- [x] Criptografia de senhas (SHA-256)
+- [x] Tratamento de erros específicos
+- [x] Estados de loading e feedback visual
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 🔄 Em Desenvolvimento
+- [ ] Sistema de login
+- [ ] Autenticação JWT
+- [ ] Recuperação de senha
+- [ ] Dashboard do usuário
+- [ ] Gerenciamento de perfis
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## 🛠️ Instalação e Execução
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Pré-requisitos
+- Node.js 18+
+- npm ou yarn
+- Conta no Supabase
+
+### Configuração
+
+1. **Clone o repositório**
+```bash
+git clone https://github.com/sensoailabs/sensoailabs.git
+cd sensoailabs
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+2. **Instale as dependências**
+```bash
+npm install
 ```
+
+3. **Configure as variáveis de ambiente**
+```bash
+# Copie o arquivo .env.example para .env
+cp .env.example .env
+
+# Configure as variáveis do Supabase
+VITE_SUPABASE_URL=sua_url_do_supabase
+VITE_SUPABASE_ANON_KEY=sua_chave_anonima
+```
+
+4. **Execute o projeto**
+```bash
+npm run dev
+```
+
+O projeto estará disponível em `http://localhost:5173`
+
+## 📁 Estrutura do Projeto
+
+```
+src/
+├── components/          # Componentes React
+│   ├── ui/             # Componentes base do shadcn/ui
+│   ├── SignupPage.tsx  # Página de cadastro
+│   └── LoginPage.tsx   # Página de login
+├── services/           # Serviços e APIs
+│   └── authService.ts  # Serviço de autenticação
+├── lib/               # Utilitários
+│   └── utils.ts       # Funções auxiliares
+└── App.tsx            # Componente principal
+```
+
+## 🔐 API de Autenticação
+
+### Endpoint de Cadastro
+```
+POST /functions/v1/register
+```
+
+**Request Body:**
+```json
+{
+  "name": "João Silva",
+  "email": "joao.silva@sensoramadesign.com.br",
+  "password": "MinhaSenh@123",
+  "confirmPassword": "MinhaSenh@123"
+}
+```
+
+**Responses:**
+- `201`: Usuário cadastrado com sucesso
+- `400`: Dados inválidos
+- `409`: E-mail já cadastrado
+- `500`: Erro interno do servidor
+
+### Validações
+- **E-mail**: Deve ser do domínio @sensoramadesign.com.br
+- **Senha**: Mínimo 8 caracteres, 1 maiúscula, 1 minúscula, 1 número, 1 especial
+- **Duplicatas**: Verificação automática de e-mails existentes
+
+## 🗄️ Banco de Dados
+
+### Tabela Users
+```sql
+CREATE TABLE users (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(150) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  profile VARCHAR(50) DEFAULT 'user',
+  photo_url VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  last_login TIMESTAMP,
+  is_active BOOLEAN DEFAULT true
+);
+```
+
+### Segurança
+- **RLS (Row Level Security)** habilitado
+- **Políticas específicas** para usuários e administradores
+- **Triggers automáticos** para updated_at
+- **Validação de domínio** via constraint
+
+## 🧪 Testes
+
+```bash
+# Executar testes unitários
+npm run test
+
+# Executar testes de integração
+npm run test:integration
+
+# Coverage
+npm run test:coverage
+```
+
+## 📚 Documentação
+
+- [API Documentation](./api-documentation.md)
+- [Database Schema](./database-schema.md)
+- [Deployment Guide](./docs/deployment.md)
+
+## 🤝 Contribuição
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/nova-funcionalidade`)
+3. Commit suas mudanças (`git commit -m 'feat: adiciona nova funcionalidade'`)
+4. Push para a branch (`git push origin feature/nova-funcionalidade`)
+5. Abra um Pull Request
+
+### Padrões de Commit
+- `feat:` Nova funcionalidade
+- `fix:` Correção de bug
+- `docs:` Documentação
+- `style:` Formatação
+- `refactor:` Refatoração
+- `test:` Testes
+- `chore:` Manutenção
+
+## 📄 Licença
+
+Este projeto é propriedade da **Sensorama Design** e está sob licença privada.
+
+## 👥 Equipe
+
+- **Desenvolvimento**: Anderson Batista
+- **Design**: Equipe Sensorama
+- **Product Owner**: Sensorama Design
+
+## 🔗 Links Úteis
+
+- [Supabase Dashboard](https://supabase.com/dashboard)
+- [shadcn/ui Components](https://ui.shadcn.com/)
+- [Tailwind CSS Docs](https://tailwindcss.com/docs)
+- [React Documentation](https://react.dev/)
+
+---
+
+**Sensorama Design** - Transformando ideias em experiências digitais excepcionais.

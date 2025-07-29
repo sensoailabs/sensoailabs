@@ -25,7 +25,11 @@ interface PasswordStrength {
   color: string;
 }
 
-const SignupPage: React.FC = () => {
+interface SignupPageProps {
+  onNavigateToLogin?: () => void;
+}
+
+const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin }) => {
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     email: '',
@@ -334,7 +338,7 @@ const SignupPage: React.FC = () => {
               <button
                 type="button"
                 className="text-sm text-primary hover:underline"
-                onClick={() => alert('Redirecionamento para página de login')}
+                onClick={() => onNavigateToLogin ? onNavigateToLogin() : alert('Redirecionamento para página de login')}
               >
                 Já tenho conta
               </button>

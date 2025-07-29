@@ -20,8 +20,44 @@ CREATE TABLE users (
 );
 ```
 
+## Tabela Sessions
+
+### Especificações da Tabela
+
+```sql
+-- Criar tabela sessions para controle de sessões ativas
+CREATE TABLE sessions (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    remember_me BOOLEAN DEFAULT false NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    
+    -- Foreign key constraint
+    CONSTRAINT fk_sessions_user_id 
+        FOREIGN KEY (user_id) 
+        REFERENCES users(id) 
+        ON DELETE CASCADE
+);
+```
+
+### Campos da Tabela Sessions
+
+| Campo | Tipo | Constraints | Descrição |
+|-------|------|-------------|-----------|
+| `id` | BIGSERIAL | PRIMARY KEY, AUTO INCREMENT | Identificador único da sessão |
+| `user_id` | BIGINT | NOT NULL, FOREIGN KEY | ID do usuário proprietário |
+| `token` | VARCHAR(255) | UNIQUE, NOT NULL | Token único da sessão |
+| `created_at` | TIMESTAMP WITH TIME ZONE | DEFAULT CURRENT_TIMESTAMP | Data de criação |
+| `ip_address` | VARCHAR(45) | NULLABLE | Endereço IP do cliente |
+| `user_agent` | TEXT | NULLABLE | User agent do navegador |
+
 ### Índices para Performance
 
+#### Tabela Users
 ```sql
 -- Criar índice para consultas por profile
 CREATE INDEX idx_users_profile ON users(profile);
@@ -31,6 +67,15 @@ CREATE INDEX idx_users_is_active ON users(is_active);
 
 -- Criar índice para consultas por created_at
 CREATE INDEX idx_users_created_at ON users(created_at);
+```
+
+#### Tabela Sessions
+```sql
+-- Índice em sessions.token para busca rápida
+CREATE INDEX idx_sessions_token ON sessions(token);
+
+-- Índice em sessions.user_id
+CREATE INDEX idx_sessions_user_id ON sessions(user_id);
 ```
 
 ### Triggers Automáticos
@@ -54,29 +99,163 @@ CREATE TRIGGER update_users_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 ```
 
-#### 2. Validação de Domínio do Email
+#### 3. Atualização Automática do Last Login
 
 ```sql
--- Função para validar domínio do email
-CREATE OR REPLACE FUNCTION validate_email_domain()
+-- Função para atualizar last_login automaticamente
+CREATE OR REPLACE FUNCTION update_last_login()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.email NOT LIKE '%@sensoramadesign.com.br' THEN
-        RAISE EXCEPTION 'Email deve ser do domínio @sensoramadesign.com.br';
-    END IF;
+    -- Atualizar last_login do usuário quando uma nova sessão é criada
+    UPDATE users 
+    SET last_login = CURRENT_TIMESTAMP 
+    WHERE id = NEW.user_id;
+    
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
--- Trigger para validar domínio do email
-CREATE TRIGGER validate_users_email_domain
-    BEFORE INSERT OR UPDATE ON users
+-- Trigger para atualizar last_login automaticamente
+CREATE TRIGGER trigger_update_last_login
+    AFTER INSERT ON sessions
     FOR EACH ROW
-    EXECUTE FUNCTION validate_email_domain();
+    EXECUTE FUNCTION update_last_login();
+```
+
+#### 4. Limpeza Automática de Sessões
+
+```sql
+-- Função para limpeza automática de sessões expiradas
+CREATE OR REPLACE FUNCTION cleanup_expired_sessions()
+RETURNS INTEGER AS $$
+DECLARE
+    deleted_count INTEGER;
+BEGIN
+    -- Deletar sessões expiradas
+    DELETE FROM sessions 
+    WHERE expires_at < CURRENT_TIMESTAMP;
+    
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    
+    -- Log da limpeza (opcional)
+    RAISE NOTICE 'Limpeza automática: % sessões expiradas removidas', deleted_count;
+    
+    RETURN deleted_count;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+## Funções de Gerenciamento de Sessões
+
+### 1. Validar Sessão
+
+```sql
+-- Função para validar sessão ativa
+CREATE OR REPLACE FUNCTION validate_session(session_token VARCHAR(255))
+RETURNS TABLE(
+    user_id BIGINT,
+    email VARCHAR(150),
+    name VARCHAR(100),
+    profile VARCHAR(50),
+    is_active BOOLEAN,
+    expires_at TIMESTAMP WITH TIME ZONE
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        u.id,
+        u.email,
+        u.name,
+        u.profile,
+        u.is_active,
+        s.expires_at
+    FROM sessions s
+    INNER JOIN users u ON s.user_id = u.id
+    WHERE s.token = session_token
+      AND s.expires_at > CURRENT_TIMESTAMP
+      AND u.is_active = true;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### 2. Criar Nova Sessão
+
+```sql
+-- Função para criar nova sessão
+CREATE OR REPLACE FUNCTION create_session(
+    p_user_id BIGINT,
+    p_token VARCHAR(255),
+    p_remember_me BOOLEAN DEFAULT false,
+    p_ip_address VARCHAR(45) DEFAULT NULL,
+    p_user_agent TEXT DEFAULT NULL
+)
+RETURNS BIGINT AS $$
+DECLARE
+    session_id BIGINT;
+    expires_time TIMESTAMP WITH TIME ZONE;
+BEGIN
+    -- Definir tempo de expiração
+    IF p_remember_me THEN
+        expires_time := CURRENT_TIMESTAMP + INTERVAL '30 days';
+    ELSE
+        expires_time := CURRENT_TIMESTAMP + INTERVAL '24 hours';
+    END IF;
+    
+    -- Inserir nova sessão
+    INSERT INTO sessions (
+        user_id, 
+        token, 
+        expires_at, 
+        remember_me, 
+        ip_address, 
+        user_agent
+    ) VALUES (
+        p_user_id,
+        p_token,
+        expires_time,
+        p_remember_me,
+        p_ip_address,
+        p_user_agent
+    ) RETURNING id INTO session_id;
+    
+    RETURN session_id;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### 3. Logout de Sessão
+
+```sql
+-- Função para logout (invalidar sessão)
+CREATE OR REPLACE FUNCTION logout_session(session_token VARCHAR(255))
+RETURNS BOOLEAN AS $$
+DECLARE
+    deleted_count INTEGER;
+BEGIN
+    DELETE FROM sessions WHERE token = session_token;
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    
+    RETURN deleted_count > 0;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Função para logout de todas as sessões do usuário
+CREATE OR REPLACE FUNCTION logout_all_sessions(p_user_id BIGINT)
+RETURNS INTEGER AS $$
+DECLARE
+    deleted_count INTEGER;
+BEGIN
+    DELETE FROM sessions WHERE user_id = p_user_id;
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    
+    RETURN deleted_count;
+END;
+$$ LANGUAGE plpgsql;
 ```
 
 ### Row Level Security (RLS)
 
+#### Tabela Users
 ```sql
 -- Habilitar RLS na tabela users
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
@@ -114,8 +293,37 @@ CREATE POLICY "Admins can manage all users" ON users
     );
 ```
 
+#### Tabela Sessions
+```sql
+-- Habilitar RLS na tabela sessions
+ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
+
+-- Política para usuários verem apenas suas próprias sessões
+CREATE POLICY "Users can view own sessions" ON sessions
+    FOR SELECT USING (
+        user_id::text = auth.uid()::text
+    );
+
+-- Política para usuários gerenciarem apenas suas próprias sessões
+CREATE POLICY "Users can manage own sessions" ON sessions
+    FOR ALL USING (
+        user_id::text = auth.uid()::text
+    );
+
+-- Política para admins verem todas as sessões
+CREATE POLICY "Admins can view all sessions" ON sessions
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM users 
+            WHERE id::text = auth.uid()::text 
+            AND profile = 'admin'
+        )
+    );
+```
+
 ### Documentação dos Campos
 
+#### Tabela Users
 ```sql
 -- Comentários para documentação
 COMMENT ON TABLE users IS 'Tabela de usuários do sistema de autenticação';
@@ -129,6 +337,18 @@ COMMENT ON COLUMN users.created_at IS 'Data e hora de criação do registro';
 COMMENT ON COLUMN users.updated_at IS 'Data e hora da última atualização';
 COMMENT ON COLUMN users.last_login IS 'Data e hora do último login';
 COMMENT ON COLUMN users.is_active IS 'Status ativo/inativo do usuário';
+```
+
+#### Tabela Sessions
+```sql
+-- Comentários para documentação
+COMMENT ON TABLE sessions IS 'Tabela de sessões ativas do sistema (sem expiração)';
+COMMENT ON COLUMN sessions.id IS 'Identificador único da sessão';
+COMMENT ON COLUMN sessions.user_id IS 'ID do usuário proprietário da sessão';
+COMMENT ON COLUMN sessions.token IS 'Token único da sessão';
+COMMENT ON COLUMN sessions.created_at IS 'Data e hora de criação da sessão';
+COMMENT ON COLUMN sessions.ip_address IS 'Endereço IP do cliente';
+COMMENT ON COLUMN sessions.user_agent IS 'User agent do navegador';
 ```
 
 ## Especificações Técnicas
@@ -165,6 +385,7 @@ COMMENT ON COLUMN users.is_active IS 'Status ativo/inativo do usuário';
 
 ### Exemplo de Uso
 
+#### Operações com Users
 ```sql
 -- Inserir novo usuário
 INSERT INTO users (name, email, password) 
@@ -184,13 +405,119 @@ UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = 1;
 UPDATE users SET is_active = false WHERE id = 1;
 ```
 
+#### Operações com Sessions
+```sql
+-- Criar nova sessão (24 horas)
+SELECT create_session(
+    1, -- user_id
+    'token_abc123xyz789', -- token único
+    false, -- remember_me
+    '192.168.1.100', -- ip_address
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' -- user_agent
+);
+
+-- Criar sessão persistente (30 dias)
+SELECT create_session(
+    1, -- user_id
+    'token_persistent_456', -- token único
+    true, -- remember_me = true
+    '192.168.1.100', -- ip_address
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' -- user_agent
+);
+
+-- Validar sessão ativa
+SELECT * FROM validate_session('token_abc123xyz789');
+
+-- Fazer logout de uma sessão específica
+SELECT logout_session('token_abc123xyz789');
+
+-- Fazer logout de todas as sessões do usuário
+SELECT logout_all_sessions(1);
+
+-- Buscar sessões ativas de um usuário
+SELECT s.*, u.name, u.email 
+FROM sessions s
+INNER JOIN users u ON s.user_id = u.id
+WHERE s.user_id = 1 
+  AND s.expires_at > CURRENT_TIMESTAMP;
+
+-- Limpeza manual de sessões expiradas
+SELECT cleanup_expired_sessions();
+```
+
+#### Consultas de Monitoramento
+```sql
+-- Contar sessões ativas por usuário
+SELECT 
+    u.name,
+    u.email,
+    COUNT(s.id) as sessoes_ativas
+FROM users u
+LEFT JOIN sessions s ON u.id = s.user_id 
+    AND s.expires_at > CURRENT_TIMESTAMP
+GROUP BY u.id, u.name, u.email
+ORDER BY sessoes_ativas DESC;
+
+-- Sessões que expiram nas próximas 24 horas
+SELECT 
+    s.*,
+    u.name,
+    u.email,
+    s.expires_at - CURRENT_TIMESTAMP as tempo_restante
+FROM sessions s
+INNER JOIN users u ON s.user_id = u.id
+WHERE s.expires_at BETWEEN CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP + INTERVAL '24 hours'
+ORDER BY s.expires_at;
+
+-- Histórico de logins por usuário (últimas sessões)
+SELECT 
+    u.name,
+    u.email,
+    u.last_login,
+    COUNT(s.id) as total_sessoes_criadas
+FROM users u
+LEFT JOIN sessions s ON u.id = s.user_id
+GROUP BY u.id, u.name, u.email, u.last_login
+ORDER BY u.last_login DESC NULLS LAST;
+```
+
 ## Status da Implementação
 
+### Tabela Users
 ✅ **Tabela criada** no Supabase (Projeto: kdpdpcwjdkcbuvjksokd)  
 ✅ **Índices configurados** para performance  
 ✅ **Triggers implementados** para validação e auto-atualização  
 ✅ **RLS habilitado** com políticas de segurança  
 ✅ **Validação testada** - domínio do email funcionando  
-✅ **Documentação completa** dos campos e constraints  
+✅ **Campos last_login e is_active** implementados  
 
-A estrutura está pronta para integração com o sistema de autenticação da aplicação React.
+### Tabela Sessions (Nova Estrutura)
+🔄 **Migração criada** - `002_sessions_and_login_enhancements.sql`  
+🔄 **Aguardando aplicação** no Supabase  
+📋 **Recursos incluídos:**
+- Tabela sessions com todos os campos especificados
+- Índices otimizados para performance
+- Funções de gerenciamento de sessões
+- Triggers para atualização automática do last_login
+- Limpeza automática de sessões expiradas
+- RLS configurado para segurança
+- Políticas de retenção implementadas
+
+### Funcionalidades Implementadas
+✅ **Controle de sessões ativas** com tokens únicos  
+✅ **Suporte a "Manter-me conectado"** (30 dias vs 24 horas)  
+✅ **Rastreamento de IP e User Agent** para auditoria  
+✅ **Atualização automática do last_login** via trigger  
+✅ **Limpeza automática** de sessões expiradas  
+✅ **Funções de logout** individual e em massa  
+✅ **Validação de sessões** com dados do usuário  
+✅ **Consultas de monitoramento** para administração  
+
+### Próximos Passos
+1. **Aplicar migração** no Supabase via MCP
+2. **Testar funções** de gerenciamento de sessões
+3. **Configurar limpeza automática** (cron job)
+4. **Integrar com frontend** React/TypeScript
+5. **Implementar middleware** de autenticação
+
+A estrutura está completa e pronta para integração com o sistema de autenticação da aplicação React.

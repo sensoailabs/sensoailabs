@@ -45,7 +45,7 @@ function App() {
     case 'signup':
       return <SignupPage onNavigateToLogin={navigateToLogin} />;
     case 'forgot-password':
-      return <ForgotPasswordPage />;
+      return <ForgotPasswordPage onNavigateToLogin={navigateToLogin} />;
     case 'reset-password':
       return <ResetPasswordPage />;
     default:

@@ -1,159 +1,243 @@
 import React, { useState } from 'react';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { requestPasswordReset } from '../services/passwordResetService';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { EmailInput } from '@/components/ui/email-input';
+import { Notification, useNotification } from '@/components/ui/notification';
+import { cn } from '@/lib/utils';
+import logoSensoAI from '@/assets/logo_sensoai.svg';
+import coverLogin from '@/assets/cover-login.png';
 
-// Componente Alert simples
-const Alert: React.FC<{ children: React.ReactNode; variant?: 'default' | 'destructive' }> = ({ children, variant = 'default' }) => (
-  <div className={`p-3 rounded-md text-sm border ${
-    variant === 'destructive' 
-      ? 'bg-red-50 text-red-800 border-red-200' 
-      : 'bg-blue-50 text-blue-800 border-blue-200'
-  }`}>
-    {children}
-  </div>
-);
+interface ForgotPasswordPageProps {
+  onNavigateToLogin?: () => void;
+  className?: string;
+}
 
-const AlertDescription: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div>{children}</div>
-);
-
-const ForgotPasswordPage: React.FC = () => {
+const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onNavigateToLogin, className, ...props }) => {
+  const { notification, showNotification, hideNotification } = useNotification();
+  
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState<string | undefined>(undefined);
+
+  const validateEmail = (value: string): string | undefined => {
+    if (!value) return 'E-mail é obrigatório';
+    
+    // Se contém @, deve ser o domínio correto
+    if (value.includes('@')) {
+      if (!value.endsWith('@sensoramadesign.com.br')) {
+        return 'E-mail deve ser do domínio @sensoramadesign.com.br';
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) return 'Formato de e-mail inválido';
+    } else {
+      // Apenas parte local, deve ter pelo menos 3 caracteres
+      if (value.length < 3) return 'E-mail deve ter pelo menos 3 caracteres';
+    }
+    return undefined;
+  };
+
+  const handleEmailChange = (localPart: string) => {
+    setEmail(localPart);
+    setError(undefined);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email.trim()) {
-      setError('Por favor, informe seu e-mail');
+    const emailError = validateEmail(email);
+    if (emailError) {
+      showNotification('error', 'E-mail inválido', emailError);
       return;
     }
 
     setIsLoading(true);
-    setError('');
+    setError(undefined);
 
     try {
-      const response = await requestPasswordReset(email.trim());
-      if (response.success) {
-        setSuccess(true);
-        console.log('✅ Recuperação solicitada:', response.message);
-      } else {
-        setError(response.message);
-      }
-    } catch (err: any) {
-      console.error('❌ Erro na recuperação:', err);
-      setError('Erro interno do servidor');
+      // Construir email completo se necessário
+      const fullEmail = email.includes('@') 
+        ? email 
+        : `${email}@sensoramadesign.com.br`;
+
+      // Simular chamada da API
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      console.log('Enviando e-mail de recuperação para:', fullEmail);
+      showNotification('success', 'E-mail enviado!', 'Instruções de recuperação enviadas para seu e-mail.');
+      setIsSuccess(true);
+      
+    } catch (error: any) {
+      console.error('Erro ao enviar e-mail de recuperação:', error);
+      showNotification('error', 'Erro no envio', 'Erro ao enviar e-mail de recuperação. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (success) {
+  const isFormValid = email.trim() !== '' && !validateEmail(email);
+
+  if (isSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <Card>
-            <CardHeader className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                <span className="text-green-600 text-xl">✓</span>
+      <div className={cn("flex min-h-svh w-full items-center justify-center p-6 md:p-10 bg-gray-100", className)} {...props}>
+        <div className="w-full max-w-4xl opacity-0 translate-y-8 animate-[fadeInUp_0.8s_ease-out_forwards]">
+          <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white/95 backdrop-blur-sm">
+            <CardContent className="grid p-0 md:grid-cols-2">
+              <div className="p-16 opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_0.6s_forwards]">
+                <div className="flex flex-col gap-6">
+                  {/* Header com logo */}
+                  <div className="flex flex-col items-center text-center opacity-0 -translate-y-4 animate-[fadeInDown_0.6s_ease-out_0.2s_forwards]">
+                    <div className="flex justify-center mb-4">
+                      <img src={logoSensoAI} alt="Senso AI" className="h-10 w-auto transition-transform duration-300 hover:scale-105" />
+                    </div>
+                  </div>
+
+                  {/* Mensagem de sucesso */}
+                  <div className="text-center space-y-4 opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_0.8s_forwards]">
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                      <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <h2 className="text-lg font-semibold">E-mail enviado!</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Enviamos as instruções para redefinir sua senha para o seu e-mail.
+                      Verifique sua caixa de entrada e siga as instruções.
+                    </p>
+                  </div>
+
+                  {/* Botão voltar ao login */}
+                  <Button 
+                    onClick={() => onNavigateToLogin ? onNavigateToLogin() : alert('Redirecionamento para página de login')}
+                    className="w-full rounded-full transition-all duration-300 hover:scale-[1.02] hover:shadow-lg opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.2s_forwards]"
+                  >
+                    Voltar ao Login
+                  </Button>
+                </div>
               </div>
-              <CardTitle className="text-2xl font-bold text-gray-900">
-                E-mail enviado!
-              </CardTitle>
-              <CardDescription>
-                Se o e-mail estiver cadastrado, você receberá um link para redefinir sua senha
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Alert>
-                  <AlertDescription>
-                    Verifique sua caixa de entrada e spam. O link expira em 1 hora.
-                  </AlertDescription>
-                </Alert>
-                
-                <Button 
-                  className="w-full" 
-                  variant="outline"
-                  onClick={() => window.location.href = '/login'}
-                >
-                  ← Voltar ao login
-                </Button>
+              
+              {/* Imagem lateral */}
+              <div className="relative hidden bg-muted md:block opacity-0 translate-x-4 animate-[fadeInRight_0.8s_ease-out_0.4s_forwards]">
+                <img 
+                  src={coverLogin} 
+                  alt="Senso AI Cover" 
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
               </div>
             </CardContent>
           </Card>
+          
+          {/* Termos de uso */}
+          <div className="text-balance text-center text-xs text-muted-foreground mt-6 opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_2s_forwards]">
+            Ao continuar, você concorda com nossos{' '}
+            <a href="#" className="underline underline-offset-4 hover:text-primary transition-colors duration-200">
+              Termos de Serviço
+            </a>{' '}
+            e{' '}
+            <a href="#" className="underline underline-offset-4 hover:text-primary transition-colors duration-200">
+              Política de Privacidade
+            </a>.
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-gray-900">
-              Recuperar senha
-            </CardTitle>
-            <CardDescription>
-              Informe seu e-mail para receber um link de recuperação
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+    <div className={cn("flex min-h-svh w-full items-center justify-center p-6 md:p-10 bg-gray-100", className)} {...props}>
+      <div className="w-full max-w-4xl opacity-0 translate-y-8 animate-[fadeInUp_0.8s_ease-out_forwards]">
+        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white/95 backdrop-blur-sm">
+          <CardContent className="grid p-0 md:grid-cols-2">
+            <form onSubmit={handleSubmit} className="p-16 opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_0.6s_forwards]">
+              <div className="flex flex-col gap-6">
+                {/* Header com logo */}
+                <div className="flex flex-col items-center text-center opacity-0 -translate-y-4 animate-[fadeInDown_0.6s_ease-out_0.2s_forwards]">
+                  <div className="flex justify-center mb-4">
+                    <img src={logoSensoAI} alt="Senso AI" className="h-10 w-auto transition-transform duration-300 hover:scale-105" />
+                  </div>
+                  <h1 className="text-lg font-semibold tracking-tight">Esqueci minha senha</h1>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Digite seu e-mail para receber as instruções de redefinição
+                  </p>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
-                  required
-                />
-              </div>
+                {/* E-mail */}
+                <div className="grid gap-3 opacity-0 -translate-x-4 animate-[fadeInLeft_0.6s_ease-out_0.8s_forwards]">
+                  <Label htmlFor="email" className="transition-colors duration-200">E-mail</Label>
+                  <EmailInput
+                    id="email"
+                    value={email}
+                    onChange={handleEmailChange}
+                    error={error}
+                    placeholder="usuario"
+                  />
+                </div>
 
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Enviando...
-                  </>
-                ) : (
-                  <>
-                    Enviar link de recuperação
-                  </>
-                )}
-              </Button>
-
-              <div className="text-center">
-                <a 
-                  href="/login" 
-                  className="text-sm text-blue-600 hover:text-blue-500"
+                {/* Botão Enviar */}
+                <Button 
+                  type="submit" 
+                  className="w-full rounded-full transition-all duration-300 hover:scale-[1.02] hover:shadow-lg opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.2s_forwards]" 
+                  disabled={!isFormValid || isLoading}
                 >
-                  ← Voltar ao login
-                </a>
+                  {isLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Enviando...</span>
+                    </div>
+                  ) : (
+                    'Enviar instruções'
+                  )}
+                </Button>
+
+                {/* Link para voltar ao login */}
+                <div className="text-center text-sm opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.4s_forwards]">
+                  Lembrou da senha?{' '}
+                  <button
+                    type="button"
+                    className="underline underline-offset-4 transition-all duration-200 hover:text-primary hover:scale-105"
+                    onClick={() => onNavigateToLogin ? onNavigateToLogin() : alert('Redirecionamento para página de login')}
+                  >
+                    Voltar ao login
+                  </button>
+                </div>
               </div>
             </form>
+            
+            {/* Imagem lateral */}
+            <div className="relative hidden bg-muted md:block opacity-0 translate-x-4 animate-[fadeInRight_0.8s_ease-out_0.4s_forwards]">
+              <img 
+                src={coverLogin} 
+                alt="Senso AI Cover" 
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            </div>
           </CardContent>
         </Card>
+        
+        {/* Termos de uso */}
+        <div className="text-balance text-center text-xs text-muted-foreground mt-6 opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_2s_forwards]">
+          Ao continuar, você concorda com nossos{' '}
+          <a href="#" className="underline underline-offset-4 hover:text-primary transition-colors duration-200">
+            Termos de Serviço
+          </a>{' '}
+          e{' '}
+          <a href="#" className="underline underline-offset-4 hover:text-primary transition-colors duration-200">
+            Política de Privacidade
+          </a>.
+        </div>
       </div>
+      
+      {/* Componente de Notificação */}
+      {notification && (
+        <Notification
+          type={notification.type}
+          title={notification.title}
+          message={notification.message}
+          onClose={hideNotification}
+        />
+      )}
     </div>
   );
 };

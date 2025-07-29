@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
-import { Button } from './ui/button';
+import { Card, CardContent } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
+import { EmailInput } from './ui/email-input';
+import { PasswordInput } from './ui/password-input';
+import { Notification, useNotification } from './ui/notification';
 import { registerUser, getErrorMessage, getFieldErrors, type RegisterRequest } from '../services/authService';
+import { cn } from '@/lib/utils';
+import logoSensoAI from '../assets/logo_sensoai.svg';
+import coverRegister from '../assets/cover-register.png';
 
 interface FormData {
   fullName: string;
@@ -19,17 +25,14 @@ interface FormErrors {
   confirmPassword?: string;
 }
 
-interface PasswordStrength {
-  score: number;
-  label: string;
-  color: string;
-}
-
 interface SignupPageProps {
   onNavigateToLogin?: () => void;
+  className?: string;
 }
 
-const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin }) => {
+const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin, className, ...props }) => {
+  const { notification, showNotification, hideNotification } = useNotification();
+  
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     email: '',
@@ -39,28 +42,6 @@ const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin }) => {
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [passwordStrength, setPasswordStrength] = useState<PasswordStrength>({ score: 0, label: '', color: '' });
-
-  // Validação de força da senha
-  const calculatePasswordStrength = (password: string): PasswordStrength => {
-    let score = 0;
-    const checks = {
-      length: password.length >= 8,
-      uppercase: /[A-Z]/.test(password),
-      lowercase: /[a-z]/.test(password),
-      number: /\d/.test(password),
-      special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
-    };
-
-    score = Object.values(checks).filter(Boolean).length;
-
-    if (score === 0) return { score: 0, label: '', color: '' };
-    if (score <= 2) return { score: 1, label: 'Fraca', color: 'bg-red-500' };
-    if (score <= 3) return { score: 2, label: 'Média', color: 'bg-yellow-500' };
-    if (score <= 4) return { score: 3, label: 'Forte', color: 'bg-blue-500' };
-    return { score: 4, label: 'Muito Forte', color: 'bg-green-500' };
-  };
 
   // Validações em tempo real
   const validateField = (name: string, value: string): string | undefined => {
@@ -72,11 +53,18 @@ const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin }) => {
       
       case 'email':
         if (!value) return 'E-mail é obrigatório';
-        if (!value.endsWith('@sensoramadesign.com.br')) {
-          return 'E-mail deve ser do domínio @sensoramadesign.com.br';
+        
+        // Se contém @, deve ser o domínio correto
+        if (value.includes('@')) {
+          if (!value.endsWith('@sensoramadesign.com.br')) {
+            return 'E-mail deve ser do domínio @sensoramadesign.com.br';
+          }
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(value)) return 'Formato de e-mail inválido';
+        } else {
+          // Apenas parte local, deve ter pelo menos 3 caracteres
+          if (value.length < 3) return 'E-mail deve ter pelo menos 3 caracteres';
         }
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(value)) return 'Formato de e-mail inválido';
         break;
       
       case 'password':
@@ -109,6 +97,14 @@ const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin }) => {
     return undefined;
   };
 
+  // Handler específico para o EmailInput
+  const handleEmailChange = (localPart: string) => {
+    setFormData(prev => ({ ...prev, email: localPart }));
+    
+    const error = validateField('email', localPart);
+    setErrors(prev => ({ ...prev, email: error }));
+  };
+
   // Atualizar dados do formulário
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -117,16 +113,6 @@ const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin }) => {
     // Validação em tempo real
     const error = validateField(name, value);
     setErrors(prev => ({ ...prev, [name]: error }));
-
-    // Atualizar força da senha
-    if (name === 'password') {
-      setPasswordStrength(calculatePasswordStrength(value));
-      // Revalidar confirmação de senha se já foi preenchida
-      if (formData.confirmPassword) {
-        const confirmError = validateField('confirmPassword', formData.confirmPassword);
-        setErrors(prev => ({ ...prev, confirmPassword: confirmError }));
-      }
-    }
 
     // Revalidar confirmação de senha quando senha principal muda
     if (name === 'confirmPassword' || (name === 'password' && formData.confirmPassword)) {
@@ -153,29 +139,34 @@ const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin }) => {
     }
 
     setIsLoading(true);
-    setSubmitMessage(null);
 
     try {
+      // Construir email completo se necessário
+      const fullEmail = formData.email.includes('@') 
+        ? formData.email 
+        : `${formData.email}@sensoramadesign.com.br`;
+        
       const userData: RegisterRequest = {
         name: formData.fullName,
-        email: formData.email,
+        email: fullEmail,
         password: formData.password,
         confirmPassword: formData.confirmPassword,
       };
 
       const response = await registerUser(userData);
       
-      setSubmitMessage({ type: 'success', text: response.message || 'Cadastro realizado com sucesso! Bem-vindo à Sensorama.' });
+      showNotification('success', 'Cadastro realizado!', response.message || 'Cadastro realizado com sucesso! Bem-vindo à Sensorama.');
       
       // Limpar formulário após sucesso
       setFormData({ fullName: '', email: '', password: '', confirmPassword: '' });
-      setPasswordStrength({ score: 0, label: '', color: '' });
       
       // Redirecionar para login após 2 segundos
       setTimeout(() => {
-        // Aqui você pode implementar a navegação para a página de login
-        console.log('Redirecionando para login...');
-        setSubmitMessage({ type: 'success', text: 'Redirecionando para login...' });
+        showNotification('success', 'Redirecionando...', 'Redirecionando para login...');
+        setTimeout(() => {
+          console.log('Redirecionando para login...');
+          if (onNavigateToLogin) onNavigateToLogin();
+        }, 1000);
       }, 2000);
       
     } catch (error: any) {
@@ -185,14 +176,14 @@ const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin }) => {
       if (error.status === 400) {
         const fieldErrors = getFieldErrors(error);
         if (Object.keys(fieldErrors).length > 0) {
-          setSubmitMessage({ type: 'error', text: `Dados inválidos: ${getErrorMessage(error)}` });
+          showNotification('error', 'Dados inválidos', `Dados inválidos: ${getErrorMessage(error)}`);
         } else {
-          setSubmitMessage({ type: 'error', text: getErrorMessage(error) });
+          showNotification('error', 'Erro de validação', getErrorMessage(error));
         }
       } else if (error.status === 409) {
-        setSubmitMessage({ type: 'error', text: 'E-mail já cadastrado. Tente fazer login ou use outro e-mail.' });
+        showNotification('error', 'E-mail já cadastrado', 'E-mail já cadastrado. Tente fazer login ou use outro e-mail.');
       } else {
-        setSubmitMessage({ type: 'error', text: getErrorMessage(error) || 'Erro interno do servidor. Tente novamente.' });
+        showNotification('error', 'Erro no cadastro', getErrorMessage(error) || 'Erro interno do servidor. Tente novamente.');
       }
     } finally {
       setIsLoading(false);
@@ -203,149 +194,151 @@ const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin }) => {
                      Object.values(formData).every(value => value.trim() !== '');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold text-slate-900">
-            Criar Conta
-          </CardTitle>
-          <CardDescription className="text-slate-600">
-            Junte-se à plataforma Sensorama
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent className="space-y-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Nome Completo */}
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Nome Completo *</Label>
-              <Input
-                id="fullName"
-                name="fullName"
-                type="text"
-                value={formData.fullName}
-                onChange={handleInputChange}
-                className={`${errors.fullName ? 'border-red-500 focus:ring-red-500' : 
-                           formData.fullName && !errors.fullName ? 'border-green-500 focus:ring-green-500' : ''}`}
-                placeholder="Digite seu nome completo"
-              />
-              {errors.fullName && (
-                <p className="text-sm text-red-600">{errors.fullName}</p>
-              )}
-            </div>
-
-            {/* E-mail */}
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail *</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className={`${errors.email ? 'border-red-500 focus:ring-red-500' : 
-                           formData.email && !errors.email ? 'border-green-500 focus:ring-green-500' : ''}`}
-                placeholder="seu.nome@sensoramadesign.com.br"
-              />
-              {errors.email && (
-                <p className="text-sm text-red-600">{errors.email}</p>
-              )}
-            </div>
-
-            {/* Senha */}
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha *</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className={`${errors.password ? 'border-red-500 focus:ring-red-500' : 
-                           formData.password && !errors.password ? 'border-green-500 focus:ring-green-500' : ''}`}
-                placeholder="Digite sua senha"
-              />
-              
-              {/* Indicador de força da senha */}
-              {formData.password && (
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex-1 bg-slate-200 rounded-full h-2">
-                      <div 
-                        className={`h-2 rounded-full transition-all duration-300 ${passwordStrength.color}`}
-                        style={{ width: `${(passwordStrength.score / 4) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-xs font-medium text-slate-600">
-                      {passwordStrength.label}
-                    </span>
+    <div className={cn("flex min-h-svh w-full items-center justify-center p-6 md:p-10 bg-gray-100", className)} {...props}>
+      <div className="w-full max-w-4xl opacity-0 translate-y-8 animate-[fadeInUp_0.8s_ease-out_forwards]">
+        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white/95 backdrop-blur-sm">
+          <CardContent className="grid p-0 md:grid-cols-2">
+            <form onSubmit={handleSubmit} className="p-16 opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_0.6s_forwards]">
+              <div className="flex flex-col gap-6">
+                {/* Header com logo */}
+                <div className="flex flex-col items-center text-center opacity-0 -translate-y-4 animate-[fadeInDown_0.6s_ease-out_0.2s_forwards]">
+                  <div className="flex justify-center mb-4">
+                    <img src={logoSensoAI} alt="Senso AI" className="h-10 w-auto transition-transform duration-300 hover:scale-105" />
                   </div>
                 </div>
-              )}
-              
-              {errors.password && (
-                <p className="text-sm text-red-600">{errors.password}</p>
-              )}
-            </div>
 
-            {/* Confirmar Senha */}
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Senha *</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                className={`${errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 
-                           formData.confirmPassword && !errors.confirmPassword ? 'border-green-500 focus:ring-green-500' : ''}`}
-                placeholder="Confirme sua senha"
-              />
-              {errors.confirmPassword && (
-                <p className="text-sm text-red-600">{errors.confirmPassword}</p>
-              )}
-            </div>
-
-            {/* Mensagem de feedback */}
-            {submitMessage && (
-              <div className={`p-3 rounded-md text-sm ${
-                submitMessage.type === 'success' 
-                  ? 'bg-green-50 text-green-800 border border-green-200' 
-                  : 'bg-red-50 text-red-800 border border-red-200'
-              }`}>
-                {submitMessage.text}
-              </div>
-            )}
-
-            {/* Botão Cadastrar */}
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={!isFormValid || isLoading}
-            >
-              {isLoading ? (
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Cadastrando...</span>
+                {/* Nome Completo */}
+                <div className="grid gap-3 opacity-0 -translate-x-4 animate-[fadeInLeft_0.6s_ease-out_0.8s_forwards]">
+                  <Label htmlFor="fullName" className="transition-colors duration-200">Nome Completo</Label>
+                  <Input
+                    id="fullName"
+                    name="fullName"
+                    type="text"
+                    value={formData.fullName}
+                    onChange={handleInputChange}
+                    className={`transition-all duration-200 ${errors.fullName ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                    placeholder="Digite seu nome completo"
+                  />
+                  {errors.fullName && (
+                    <p className="text-sm text-destructive opacity-0 translate-x-2 animate-[fadeInLeft_0.4s_ease-out_forwards]">{errors.fullName}</p>
+                  )}
                 </div>
-              ) : (
-                'Cadastrar'
-              )}
-            </Button>
 
-            {/* Link para login */}
-            <div className="text-center">
-              <button
-                type="button"
-                className="text-sm text-primary hover:underline"
-                onClick={() => onNavigateToLogin ? onNavigateToLogin() : alert('Redirecionamento para página de login')}
-              >
-                Já tenho conta
-              </button>
+                {/* E-mail */}
+                <div className="grid gap-3 opacity-0 -translate-x-4 animate-[fadeInLeft_0.6s_ease-out_1s_forwards]">
+                  <Label htmlFor="email" className="transition-colors duration-200">E-mail</Label>
+                  <EmailInput
+                    id="email"
+                    value={formData.email}
+                    onChange={handleEmailChange}
+                    error={errors.email}
+                    placeholder="usuario"
+                  />
+                </div>
+
+                {/* Senha */}
+                <div className="opacity-0 -translate-x-4 animate-[fadeInLeft_0.6s_ease-out_1.2s_forwards]">
+                  <PasswordInput
+                    id="password"
+                    label="Senha"
+                    placeholder="Digite sua senha"
+                    value={formData.password}
+                    onChange={(value) => {
+                      setFormData(prev => ({ ...prev, password: value }));
+                      const error = validateField('password', value);
+                      setErrors(prev => ({ ...prev, password: error }));
+                      
+                      // Revalidar confirmação de senha quando senha principal muda
+                      if (formData.confirmPassword) {
+                        const confirmError = validateField('confirmPassword', formData.confirmPassword);
+                        setErrors(prev => ({ ...prev, confirmPassword: confirmError }));
+                      }
+                    }}
+                    error={errors.password}
+                    showStrengthIndicator={true}
+                  />
+                </div>
+
+                {/* Confirmar Senha */}
+                <div className="opacity-0 -translate-x-4 animate-[fadeInLeft_0.6s_ease-out_1.4s_forwards]">
+                  <PasswordInput
+                    id="confirmPassword"
+                    label="Confirmar Senha"
+                    placeholder="Confirme sua senha"
+                    value={formData.confirmPassword}
+                    onChange={(value) => {
+                      setFormData(prev => ({ ...prev, confirmPassword: value }));
+                      const error = validateField('confirmPassword', value);
+                      setErrors(prev => ({ ...prev, confirmPassword: error }));
+                    }}
+                    error={errors.confirmPassword}
+                    showStrengthIndicator={false}
+                  />
+                </div>
+
+                {/* Botão Cadastrar */}
+                <Button 
+                  type="submit" 
+                  className="w-full rounded-full transition-all duration-300 hover:scale-[1.02] hover:shadow-lg opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.6s_forwards]" 
+                  disabled={!isFormValid || isLoading}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Cadastrando...</span>
+                    </div>
+                  ) : (
+                    'Cadastrar'
+                  )}
+                </Button>
+
+                {/* Link para login */}
+                <div className="text-center text-sm opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.8s_forwards]">
+                  Já tem conta?{' '}
+                  <button
+                    type="button"
+                    className="underline underline-offset-4 transition-all duration-200 hover:text-primary hover:scale-105"
+                    onClick={() => onNavigateToLogin ? onNavigateToLogin() : alert('Redirecionamento para página de login')}
+                  >
+                    Entrar
+                  </button>
+                </div>
+              </div>
+            </form>
+            
+            {/* Imagem lateral */}
+            <div className="relative hidden bg-muted md:block opacity-0 translate-x-4 animate-[fadeInRight_0.8s_ease-out_0.4s_forwards]">
+              <img 
+                src={coverRegister} 
+                alt="Senso AI Cover" 
+                className="absolute inset-0 h-full w-full object-cover"
+              />
             </div>
-          </form>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+        
+        {/* Termos de uso */}
+        <div className="text-balance text-center text-xs text-muted-foreground mt-6 opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_2s_forwards]">
+          Ao continuar, você concorda com nossos{' '}
+          <a href="#" className="underline underline-offset-4 hover:text-primary transition-colors duration-200">
+            Termos de Serviço
+          </a>{' '}
+          e{' '}
+          <a href="#" className="underline underline-offset-4 hover:text-primary transition-colors duration-200">
+            Política de Privacidade
+          </a>.
+        </div>
+      </div>
+      
+      {/* Componente de Notificação */}
+      {notification && (
+        <Notification
+          type={notification.type}
+          title={notification.title}
+          message={notification.message}
+          onClose={hideNotification}
+        />
+      )}
     </div>
   );
 };

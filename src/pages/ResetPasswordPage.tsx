@@ -11,14 +11,15 @@ import {
   showFeedback,
   handlePasswordResetError
 } from '../services/passwordResetService';
+import logoSensoAI from '../assets/logo_sensoai.svg';
 
 // Componente Alert simples
-const Alert: React.FC<{ children: React.ReactNode; variant?: 'default' | 'destructive' }> = ({ children, variant = 'default' }) => (
+const Alert: React.FC<{ children: React.ReactNode; variant?: 'default' | 'destructive'; className?: string }> = ({ children, variant = 'default', className = '' }) => (
   <div className={`p-3 rounded-md text-sm border ${
     variant === 'destructive' 
       ? 'bg-red-50 text-red-800 border-red-200' 
       : 'bg-blue-50 text-blue-800 border-blue-200'
-  }`}>
+  } ${className}`}>
     {children}
   </div>
 );
@@ -184,12 +185,12 @@ const ResetPasswordPage: React.FC = () => {
   if (isValidatingToken) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <Card>
-            <CardContent className="pt-6">
+        <div className="max-w-sm w-full space-y-8 opacity-0 translate-y-8 animate-[fadeInUp_0.8s_ease-out_forwards]">
+          <Card className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white/95 backdrop-blur-sm">
+            <CardContent className="pt-6 opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_0.4s_forwards]">
               <div className="text-center">
                 <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-gray-600">Validando token...</p>
+                <p className="text-gray-600 opacity-0 translate-y-2 animate-[fadeInUp_0.6s_ease-out_0.8s_forwards]">Validando token...</p>
               </div>
             </CardContent>
           </Card>
@@ -202,42 +203,45 @@ const ResetPasswordPage: React.FC = () => {
   if (!tokenValid) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <Card>
+        <div className="max-w-sm w-full space-y-8 opacity-0 translate-y-8 animate-[fadeInUp_0.8s_ease-out_forwards]">
+          <Card className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white/95 backdrop-blur-sm">
             <CardHeader className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                <span className="text-red-600 text-xl">✗</span>
+              <div className="flex justify-center mb-2 opacity-0 -translate-y-4 animate-[fadeInDown_0.6s_ease-out_0.2s_forwards]">
+                <img src={logoSensoAI} alt="Senso AI" className="h-8 w-auto transition-transform duration-300 hover:scale-105" />
               </div>
-              <CardTitle className="text-2xl font-bold text-gray-900">
-                Link inválido
-              </CardTitle>
-              <CardDescription>
-                {error || 'O link de recuperação é inválido ou expirou'}
-              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Alert variant="destructive">
+            <CardContent className="opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_0.4s_forwards]">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto opacity-0 scale-50 animate-[fadeInScale_0.6s_ease-out_0.6s_forwards]">
+                  <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 opacity-0 -translate-y-4 animate-[fadeInDown_0.6s_ease-out_0.8s_forwards]">
+                  Token inválido ou expirado
+                </h2>
+                <p className="text-gray-600 opacity-0 translate-y-2 animate-[fadeInUp_0.6s_ease-out_1s_forwards]">
+                  O link de redefinição de senha não é válido ou já expirou. 
+                  Solicite um novo link de redefinição.
+                </p>
+                <Alert variant="destructive" className="opacity-0 translate-y-2 animate-[fadeInUp_0.6s_ease-out_1.2s_forwards]">
                   <AlertDescription>
-                    Solicite um novo link de recuperação de senha.
+                    Por favor, solicite um novo link de redefinição de senha.
                   </AlertDescription>
                 </Alert>
-                
                 <Button 
-                  className="w-full" 
                   onClick={() => window.location.href = '/forgot-password'}
+                  className="w-full transition-all duration-300 hover:scale-[1.02] hover:shadow-lg opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.4s_forwards]"
                 >
                   Solicitar novo link
                 </Button>
-                
-                <div className="text-center">
-                  <a 
-                    href="/login" 
-                    className="text-sm text-blue-600 hover:text-blue-500"
-                  >
-                    ← Voltar ao login
-                  </a>
-                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.location.href = '/login'}
+                  className="w-full transition-all duration-200 hover:scale-105 opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.6s_forwards]"
+                >
+                  ← Voltar ao login
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -250,30 +254,34 @@ const ResetPasswordPage: React.FC = () => {
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <Card>
+        <div className="max-w-sm w-full space-y-8 opacity-0 translate-y-8 animate-[fadeInUp_0.8s_ease-out_forwards]">
+          <Card className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white/95 backdrop-blur-sm">
             <CardHeader className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                <span className="text-green-600 text-xl">✓</span>
+              <div className="flex justify-center mb-2 opacity-0 -translate-y-4 animate-[fadeInDown_0.6s_ease-out_0.2s_forwards]">
+                <img src={logoSensoAI} alt="Senso AI" className="h-8 w-auto transition-transform duration-300 hover:scale-105" />
               </div>
-              <CardTitle className="text-2xl font-bold text-gray-900">
-                Senha redefinida!
-              </CardTitle>
-              <CardDescription>
-                Sua senha foi alterada com sucesso
-              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Alert>
+            <CardContent className="opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_0.4s_forwards]">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto opacity-0 scale-50 animate-[fadeInScale_0.6s_ease-out_0.6s_forwards]">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 opacity-0 -translate-y-4 animate-[fadeInDown_0.6s_ease-out_0.8s_forwards]">
+                  Senha redefinida com sucesso!
+                </h2>
+                <p className="text-gray-600 opacity-0 translate-y-2 animate-[fadeInUp_0.6s_ease-out_1s_forwards]">
+                  Sua senha foi alterada com sucesso. Agora você pode fazer login com sua nova senha.
+                </p>
+                <Alert className="opacity-0 translate-y-2 animate-[fadeInUp_0.6s_ease-out_1.2s_forwards]">
                   <AlertDescription>
-                    Você será redirecionado para o login em alguns segundos...
+                    Sua conta está segura. Faça login para continuar.
                   </AlertDescription>
                 </Alert>
-                
                 <Button 
-                  className="w-full" 
                   onClick={() => window.location.href = '/login'}
+                  className="w-full transition-all duration-300 hover:scale-[1.02] hover:shadow-lg opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.4s_forwards]"
                 >
                   Ir para login
                 </Button>
@@ -288,26 +296,29 @@ const ResetPasswordPage: React.FC = () => {
   // Formulário de redefinição
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <Card>
+      <div className="max-w-sm w-full space-y-8 opacity-0 translate-y-8 animate-[fadeInUp_0.8s_ease-out_forwards]">
+        <Card className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white/95 backdrop-blur-sm">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-gray-900">
+            <div className="flex justify-center mb-2 opacity-0 -translate-y-4 animate-[fadeInDown_0.6s_ease-out_0.2s_forwards]">
+              <img src={logoSensoAI} alt="Senso AI" className="h-8 w-auto transition-transform duration-300 hover:scale-105" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-gray-900 opacity-0 -translate-y-4 animate-[fadeInDown_0.6s_ease-out_0.4s_forwards]">
               Redefinir senha
             </CardTitle>
-            <CardDescription>
-              Defina uma nova senha para {userEmail}
+            <CardDescription className="opacity-0 -translate-y-4 animate-[fadeInDown_0.6s_ease-out_0.6s_forwards]">
+              Digite sua nova senha
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_0.8s_forwards]">
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <Alert variant="destructive">
+                <Alert variant="destructive" className="opacity-0 translate-y-2 animate-[fadeInUp_0.4s_ease-out_forwards]">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">Nova senha</Label>
+              <div className="space-y-2 opacity-0 -translate-x-4 animate-[fadeInLeft_0.6s_ease-out_1s_forwards]">
+                <Label htmlFor="newPassword" className="transition-colors duration-200">Nova senha</Label>
                 <Input
                   id="newPassword"
                   type="password"
@@ -319,14 +330,14 @@ const ResetPasswordPage: React.FC = () => {
                   required
                 />
                 {validationErrors.newPassword && (
-                  <p className="text-sm text-red-600">{validationErrors.newPassword}</p>
+                  <p className="text-sm text-red-600 animate-in fade-in-0 slide-in-from-left-1 duration-300">{validationErrors.newPassword}</p>
                 )}
                 
                 <PasswordStrengthIndicator password={newPassword} />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar nova senha</Label>
+              <div className="space-y-2 opacity-0 -translate-x-4 animate-[fadeInLeft_0.6s_ease-out_1.2s_forwards]">
+                <Label htmlFor="confirmPassword" className="transition-colors duration-200">Confirmar nova senha</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -338,13 +349,13 @@ const ResetPasswordPage: React.FC = () => {
                   required
                 />
                 {validationErrors.confirmPassword && (
-                  <p className="text-sm text-red-600">{validationErrors.confirmPassword}</p>
+                  <p className="text-sm text-red-600 animate-in fade-in-0 slide-in-from-left-1 duration-300">{validationErrors.confirmPassword}</p>
                 )}
               </div>
 
               <Button 
                 type="submit" 
-                className="w-full" 
+                className="w-full transition-all duration-300 hover:scale-[1.02] hover:shadow-lg opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.4s_forwards]" 
                 disabled={isLoading || !newPassword || !confirmPassword}
               >
                 {isLoading ? (
@@ -357,10 +368,10 @@ const ResetPasswordPage: React.FC = () => {
                 )}
               </Button>
 
-              <div className="text-center">
+              <div className="text-center opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.6s_forwards]">
                 <a 
                   href="/login" 
-                  className="text-sm text-blue-600 hover:text-blue-500"
+                  className="text-sm text-blue-600 hover:text-blue-500 transition-all duration-200 hover:scale-105"
                 >
                   ← Voltar ao login
                 </a>

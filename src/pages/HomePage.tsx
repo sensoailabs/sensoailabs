@@ -9,6 +9,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
+import { CardAplicativos } from '@/components/CardAplicativos';
 
 export default function HomePage() {
   const [userName, setUserName] = useState<string>('');
@@ -97,122 +98,59 @@ export default function HomePage() {
               </TabsList>
               <TabsContent value="meus-aplicativos" className="mt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
-                  {/* Card principal - Anonimizador de dados (baseado no modelo SVG) */}
-                  <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden w-full max-w-[296px]" style={{
-                    background: 'linear-gradient(180deg, #FFF 62.85%, #DCDFEE 100%)'
-                  }}>
-                    {/* Conteúdo único */}
-                    <div className="p-5">
-                      {/* Ícone */}
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-6 h-6 bg-[#4E67FF] rounded-md flex items-center justify-center">
-                          <Eye className="w-4 h-4 text-white" />
-                        </div>
-                        <span className="text-[10px] font-semibold text-[#4E67FF]">ANONIMIZADOR</span>
-                      </div>
-                      
-                      {/* Título */}
-                      <h3 className="text-[16px] font-bold text-black mb-2">
-                        Anonimizador de dados
-                      </h3>
-                      
-                      {/* Descrição */}
-                      <p className="text-[12px] text-[#818181] mb-4 line-clamp-2">
-                        Anonimize dados em lote. Lorem ipsum dolor sit amet, consectetur lorem ipsum dolor
-                      </p>
-                      
-                      {/* Tags */}
-                      <div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-0 hide-scrollbar" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-                        <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-semibold rounded-[6px] flex-shrink-0">
-                          Geral
-                        </span>
-                        <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-semibold rounded-[6px] flex-shrink-0">
-                          Benchmarking
-                        </span>
-                        <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-semibold rounded-[6px] flex-shrink-0">
-                          Navegação guiada
-                        </span>
-                        <span className="px-3 py-1 bg-gray-100 text-gray-600 text-[10px] font-semibold rounded-[6px] flex-shrink-0">
-                          +2
-                        </span>
-                      </div>
-                      
-                      {/* Imagem */}
-                      <img 
-                        src="/src/assets/modulo-imagem.png" 
-                        alt="Módulo Anonimizador" 
-                        className="w-full object-cover mt-4" 
-                      />
-                    </div>
-                  </div>
+                  {/* Card principal - Anonimizador de dados (componente genérico) */}
+                  <CardAplicativos
+                    icon={Eye}
+                    categoria="Anonimizador de dados"
+                    titulo="Anonimize dados em lote"
+                    descricao="Anonimize dados em lote. Lorem ipsum dolor sit amet, consectetur lorem ipsum dolor"
+                    tags={[
+                      { label: "Geral", type: "primary" },
+                      { label: "Benchmarking", type: "primary" },
+                      { label: "Navegação guiada", type: "primary" }
+                    ]}
+                    tagsExtras={2}
+                    imagemSrc="/src/assets/modulo-imagem.png"
+                    imagemAlt="Módulo Anonimizador"
+                    tagsPrimaryBgColor="#EBF2FF"
+                    tagsPrimaryColor="#4E67FF"
+                  />
 
-                  {/* Card 2 - Chat Inteligente */}
-                  <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden w-full max-w-[296px]" style={{
-                    background: 'linear-gradient(180deg, #FFF 62.85%, #DCDFEE 100%)'
-                  }}>
-                    <div className="p-5">
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-6 h-6 bg-purple-500 rounded-md flex items-center justify-center">
-                          <MessageSquare className="w-4 h-4 text-white" />
-                        </div>
-                        <span className="text-[10px] font-semibold text-purple-500">CHAT</span>
-                      </div>
-                      
-                      <h3 className="text-[16px] font-bold text-black mb-2">
-                        Chat Inteligente
-                      </h3>
-                      
-                      <p className="text-[12px] text-[#818181] mb-4 line-clamp-2">
-                        Converse com IA avançada. Assistente inteligente para suas necessidades
-                      </p>
-                      
-                      <div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-4 hide-scrollbar" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-                        <span className="px-3 py-1 bg-purple-50 text-purple-600 text-[10px] font-semibold rounded-[6px] flex-shrink-0">
-                          IA
-                        </span>
-                        <span className="px-3 py-1 bg-purple-50 text-purple-600 text-[10px] font-semibold rounded-[6px] flex-shrink-0">
-                          Conversação
-                        </span>
-                        <span className="px-3 py-1 bg-purple-50 text-purple-600 text-[10px] font-semibold rounded-[6px] flex-shrink-0">
-                          Assistente
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  {/* Card 2 - Chat Inteligente (usando componente genérico) */}
+                  <CardAplicativos
+                    icon={MessageSquare}
+                    iconBgColor="#1DA55C"
+                    categoria="Senso Chat"
+                    categoriaColor="#1DA55C"
+                    titulo="Converse com IA da Senso"
+                    descricao="Você pode conversar de forma segura com a IA da Senso"
+                    tags={[
+                      { label: "Geral", type: "primary" },
+                      { label: "Conversação", type: "primary" },
+                      { label: "Análise", type: "primary" }
+                    ]}
+                    tagsExtras={1}
+                    tagsPrimaryBgColor="#ECFDF5"
+                    tagsPrimaryColor="#1DA55C"
+                  />
+{/* Card 2 - Chat Inteligente (usando componente genérico) */}
+                  <CardAplicativos
+                    icon={MessageSquare}
+                    iconBgColor="#1DA55C"
+                    categoria="Senso Chat"
+                    categoriaColor="#1DA55C"
+                    titulo="Converse com IA da Senso"
+                    descricao="Você pode conversar de forma segura com a IA da Senso"
+                    tags={[
+                      { label: "Geral", type: "primary" },
+                      { label: "Conversação", type: "primary" },
+                      { label: "Análise", type: "primary" }
+                    ]}
+                    tagsExtras={1}
+                    tagsPrimaryBgColor="#ECFDF5"
+                    tagsPrimaryColor="#1DA55C"
+                  />
 
-                  {/* Card 3 - Análise de Dados */}
-                  <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden w-full max-w-[296px]" style={{
-                    background: 'linear-gradient(180deg, #FFF 62.85%, #DCDFEE 100%)'
-                  }}>
-                    <div className="p-5">
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-6 h-6 bg-green-500 rounded-md flex items-center justify-center">
-                          <Grid3X3 className="w-4 h-4 text-white" />
-                        </div>
-                        <span className="text-[10px] font-semibold text-green-500">ANÁLISE</span>
-                      </div>
-                      
-                      <h3 className="text-[16px] font-bold text-black mb-2">
-                        Análise de Dados
-                      </h3>
-                      
-                      <p className="text-[12px] text-[#818181] mb-4 line-clamp-2">
-                        Visualize e analise dados. Relatórios detalhados e insights avançados
-                      </p>
-                      
-                      <div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-4 hide-scrollbar" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-                        <span className="px-3 py-1 bg-green-50 text-green-600 text-[10px] font-semibold rounded-[6px] flex-shrink-0">
-                          Analytics
-                        </span>
-                        <span className="px-3 py-1 bg-green-50 text-green-600 text-[10px] font-semibold rounded-[6px] flex-shrink-0">
-                          Visualização
-                        </span>
-                        <span className="px-3 py-1 bg-green-50 text-green-600 text-[10px] font-semibold rounded-[6px] flex-shrink-0">
-                          Relatórios
-                        </span>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </TabsContent>
               <TabsContent value="novo-chat">

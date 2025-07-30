@@ -53,7 +53,7 @@ export default function UserMenu() {
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          className="h-8 w-8 rounded-none bg-primary text-primary-foreground hover:bg-primary/90"
+          className="h-8 w-8 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
         >
           {getInitials(userName)}
         </Button>

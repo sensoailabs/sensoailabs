@@ -5,11 +5,15 @@ import {
   LayersIcon,
   UsersIcon,
   Bell,
+  MessageSquare,
+  ArrowRightIcon,
+  SearchIcon,
 } from "lucide-react"
 
 import Logo from "@/components/navbar-components/logo"
 import UserMenu from "@/components/navbar-components/user-menu"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -40,7 +44,7 @@ export default function Header() {
   const id = useId()
 
   return (
-    <header className="border-b px-4 md:px-6">
+    <header className="border-b border-white/10 bg-white/5 backdrop-blur-md px-4 md:px-6">
       <div className="flex h-16 items-center justify-between gap-4">
         {/* Left side */}
         <div className="flex flex-1 items-center gap-2">
@@ -140,8 +144,34 @@ export default function Header() {
             </NavigationMenu>
           </div>
         </div>
+        
+        {/* Center - Search Component */}
+        <div className="absolute left-1/2 transform -translate-x-1/2 hidden md:block">
+          <div className="relative w-80">
+            <Input 
+              className="bg-muted border-transparent shadow-none rounded-full peer ps-9 pr-4" 
+              placeholder="Search..." 
+              type="search" 
+            /> 
+            <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50"> 
+              <SearchIcon size={16} /> 
+            </div> 
+          </div>
+        </div>
+        
         {/* Right side */}
         <div className="flex items-center gap-2">
+          {/* Feedback button */}
+          <Button 
+            variant="outline" 
+            className="hidden md:flex text-white border-0 rounded-full"
+            style={{
+              background: 'linear-gradient(90deg, #4E67FF 0%, #4EAFFF 79.07%, #98D4F8 102.23%)'
+            }}
+          >
+            Enviar feedback
+            <MessageSquare className="-me-1 opacity-60" size={16} aria-hidden="true" />
+          </Button>
           {/* Notification icon */}
           <TooltipProvider>
             <Tooltip>

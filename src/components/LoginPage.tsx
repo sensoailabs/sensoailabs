@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useId } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,17 +25,14 @@ interface FormErrors {
 }
 
 interface LoginPageProps {
-  onNavigateToSignup?: () => void;
-  onNavigateToForgotPassword?: () => void;
   className?: string;
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ 
-  onNavigateToSignup, 
-  onNavigateToForgotPassword,
   className,
   ...props 
 }) => {
+  const navigate = useNavigate();
   const checkboxId = useId();
   const { notification, showNotification, hideNotification } = useNotification();
   
@@ -159,21 +157,8 @@ const LoginPage: React.FC<LoginPageProps> = ({
         response.message || 'Bem-vindo de volta à Senso AI'
       );
       
-      // Simular redirecionamento para dashboard após 2 segundos
-      setTimeout(() => {
-        showNotification(
-          'success',
-          'Redirecionando...',
-          'Aguarde enquanto carregamos o dashboard'
-        );
-        
-        // Aqui seria o redirecionamento real para o dashboard
-        setTimeout(() => {
-          console.log('Redirecionando para dashboard...');
-          console.log('Usuário logado:', response.user);
-          // window.location.href = '/dashboard';
-        }, 1000);
-      }, 2000);
+      // O redirecionamento será automático via App.tsx quando o estado de auth mudar
+      console.log('Login bem-sucedido, aguardando redirecionamento automático...');
       
     } catch (error: any) {
       console.error('Erro no login:', error);
@@ -242,13 +227,12 @@ const LoginPage: React.FC<LoginPageProps> = ({
                 <div className="grid gap-3 opacity-0 -translate-x-4 animate-[fadeInLeft_0.6s_ease-out_1s_forwards]">
                   <div className="flex items-center">
                     <Label htmlFor="password" className="transition-colors duration-200">Senha</Label>
-                    <button
-                      type="button"
+                    <Link
+                      to="/forgot-password"
                       className="ml-auto text-sm underline-offset-2 hover:underline transition-all duration-200 hover:text-primary"
-                      onClick={() => onNavigateToForgotPassword ? onNavigateToForgotPassword() : alert('Redirecionamento para recuperação de senha')}
                     >
                       Esqueci minha senha
-                    </button>
+                    </Link>
                   </div>
                   <div className="relative">
                     <Input
@@ -313,13 +297,12 @@ const LoginPage: React.FC<LoginPageProps> = ({
                 {/* Link para cadastro */}
                 <div className="text-center text-sm opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.6s_forwards]">
                   Não tem conta?{' '}
-                  <button
-                    type="button"
+                  <Link
+                    to="/signup"
                     className="underline underline-offset-4 transition-all duration-200 hover:text-primary hover:scale-105"
-                    onClick={() => onNavigateToSignup ? onNavigateToSignup() : alert('Redirecionamento para cadastro')}
                   >
                     Criar conta
-                  </button>
+                  </Link>
                 </div>
               </div>
             </form>

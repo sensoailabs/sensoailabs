@@ -1,6 +1,5 @@
 import axios from 'axios';
 import type { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { authService } from '../services/authService';
 
 // Criar instância do axios com configurações padrão
 const apiClient = axios.create({
@@ -10,9 +9,6 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
-// Configurar interceptadores de autenticação
-authService.setupAxiosInterceptor(apiClient);
 
 // Interceptador de request para logs (opcional)
 apiClient.interceptors.request.use(

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,11 +12,11 @@ import coverRecovery from '@/assets/cover-recovery.png';
 import backgroundImage from '@/assets/background.png';
 
 interface ForgotPasswordPageProps {
-  onNavigateToLogin?: () => void;
   className?: string;
 }
 
-const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onNavigateToLogin, className, ...props }) => {
+const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ className, ...props }) => {
+  const navigate = useNavigate();
   const { notification, showNotification, hideNotification } = useNotification();
   
   const [email, setEmail] = useState('');
@@ -119,7 +120,7 @@ const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onNavigateToLog
 
                   {/* Botão voltar ao login */}
                   <Button 
-                    onClick={() => onNavigateToLogin ? onNavigateToLogin() : alert('Redirecionamento para página de login')}
+                    onClick={() => navigate('/login')}
                     className="w-full rounded-full transition-all duration-300 hover:scale-[1.02] hover:shadow-lg opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.2s_forwards]"
                   >
                     Voltar ao Login
@@ -168,17 +169,20 @@ const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onNavigateToLog
         <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white/95 backdrop-blur-sm">
           <CardContent className="grid p-0 md:grid-cols-2">
             <form onSubmit={handleSubmit} className="p-16 opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_0.6s_forwards]">
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-8">
                 {/* Header com logo */}
                 <div className="flex flex-col items-center text-center opacity-0 -translate-y-4 animate-[fadeInDown_0.6s_ease-out_0.2s_forwards]">
-                  <div className="flex justify-center mb-4">
+                  <div className="flex justify-center mb-6">
                     <img src={logoSensoAI} alt="Senso AI" className="h-10 w-auto transition-transform duration-300 hover:scale-105" />
                   </div>
                   <h1 className="text-lg font-semibold tracking-tight">Esqueci minha senha</h1>
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <p className="text-sm text-muted-foreground mt-3">
                     Digite seu e-mail para receber as instruções de redefinição
                   </p>
                 </div>
+
+                {/* Espaçamento para melhor distribuição */}
+                <div className="h-4"></div>
 
                 {/* E-mail */}
                 <div className="grid gap-3 opacity-0 -translate-x-4 animate-[fadeInLeft_0.6s_ease-out_0.8s_forwards]">
@@ -192,7 +196,7 @@ const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onNavigateToLog
                   />
                 </div>
 
-                {/* Botão Enviar */}
+                {/* Botão Enviar - aproximado do campo e-mail */}
                 <Button 
                   type="submit" 
                   className="w-full rounded-full transition-all duration-300 hover:scale-[1.02] hover:shadow-lg opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.2s_forwards]" 
@@ -208,16 +212,18 @@ const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onNavigateToLog
                   )}
                 </Button>
 
+                {/* Espaçamento para manter altura do card */}
+                <div className="h-8"></div>
+
                 {/* Link para voltar ao login */}
                 <div className="text-center text-sm opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.4s_forwards]">
                   Lembrou da senha?{' '}
-                  <button
-                    type="button"
+                  <Link
+                    to="/login"
                     className="underline underline-offset-4 transition-all duration-200 hover:text-primary hover:scale-105"
-                    onClick={() => onNavigateToLogin ? onNavigateToLogin() : alert('Redirecionamento para página de login')}
                   >
                     Voltar ao login
-                  </button>
+                  </Link>
                 </div>
               </div>
             </form>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -6,10 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { 
   resetUserPassword, 
   validateTokenFromURL, 
-  validatePasswordCriteria,
-  redirectAfterSuccess,
-  showFeedback,
-  handlePasswordResetError
+  validatePasswordCriteria
 } from '../services/passwordResetService';
 import logoSensoAI from '../assets/logo_sensoai.svg';
 import backgroundImage from '../assets/background.png';
@@ -97,13 +95,13 @@ const PasswordStrengthIndicator: React.FC<{ password: string }> = ({ password })
 };
 
 const ResetPasswordPage: React.FC = () => {
+  const navigate = useNavigate();
   const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isValidatingToken, setIsValidatingToken] = useState(true);
   const [tokenValid, setTokenValid] = useState(false);
-  const [userEmail, setUserEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
@@ -123,11 +121,6 @@ const ResetPasswordPage: React.FC = () => {
       setIsValidatingToken(false);
     }
   }, []);
-
-  const validateToken = async (tokenToValidate: string) => {
-    // Esta função pode ser removida ou usada para validação adicional no servidor
-    setIsValidatingToken(false);
-  };
 
   const validateForm = () => {
     const errors: {[key: string]: string} = {};
@@ -169,7 +162,7 @@ const ResetPasswordPage: React.FC = () => {
         console.log('✅ Senha redefinida:', response.message);
         
         // Redirecionar para login após 3 segundos
-        redirectAfterSuccess(3000);
+        setTimeout(() => navigate('/login'), 3000);
       } else {
         setError(response.message);
       }
@@ -247,14 +240,14 @@ const ResetPasswordPage: React.FC = () => {
                   </AlertDescription>
                 </Alert>
                 <Button 
-                  onClick={() => window.location.href = '/forgot-password'}
+                  onClick={() => navigate('/forgot-password')}
                   className="w-full transition-all duration-300 hover:scale-[1.02] hover:shadow-lg opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.4s_forwards]"
                 >
                   Solicitar novo link
                 </Button>
                 <Button 
                   variant="outline" 
-                  onClick={() => window.location.href = '/login'}
+                  onClick={() => navigate('/login')}
                   className="w-full transition-all duration-200 hover:scale-105 opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.6s_forwards]"
                 >
                   ← Voltar ao login
@@ -305,7 +298,7 @@ const ResetPasswordPage: React.FC = () => {
                   </AlertDescription>
                 </Alert>
                 <Button 
-                  onClick={() => window.location.href = '/login'}
+                  onClick={() => navigate('/login')}
                   className="w-full transition-all duration-300 hover:scale-[1.02] hover:shadow-lg opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.4s_forwards]"
                 >
                   Ir para login
@@ -402,12 +395,12 @@ const ResetPasswordPage: React.FC = () => {
               </Button>
 
               <div className="text-center opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.6s_forwards]">
-                <a 
-                  href="/login" 
+                <Link 
+                  to="/login" 
                   className="text-sm text-blue-600 hover:text-blue-500 transition-all duration-200 hover:scale-105"
                 >
                   ← Voltar ao login
-                </a>
+                </Link>
               </div>
             </form>
           </CardContent>

@@ -1,15 +1,10 @@
-import { loginUser, logoutUser, validateToken } from '../api/auth';
-import type { LoginRequest, LoginResponse } from '../api/auth';
+import { supabase } from '../lib/supabase';
 
-// Serviço de autenticação integrado com API REST
+// Serviço de autenticação integrado com Supabase
 export class AuthService {
   private static instance: AuthService;
-  private token: string | null = null;
-  private user: any = null;
 
-  private constructor() {
-    this.loadFromStorage();
-  }
+  private constructor() {}
 
   public static getInstance(): AuthService {
     if (!AuthService.instance) {
@@ -18,147 +13,137 @@ export class AuthService {
     return AuthService.instance;
   }
 
-  // Login usando API REST
-  public async login(email: string, password: string, rememberMe: boolean = false): Promise<LoginResponse> {
+  // Login usando Supabase Auth
+  public async login(email: string, password: string, rememberMe: boolean = false): Promise<any> {
     try {
-      const loginData: LoginRequest = { email, password, rememberMe };
-      const response = await loginUser(loginData);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      // Armazenar dados de autenticação
-      this.token = response.token;
-      this.user = response.user;
-
-      // Salvar no storage apropriado
-      if (rememberMe) {
-        localStorage.setItem('authToken', response.token);
-        localStorage.setItem('userData', JSON.stringify(response.user));
-        localStorage.setItem('userEmail', response.user.email);
-      } else {
-        sessionStorage.setItem('authToken', response.token);
-        sessionStorage.setItem('userData', JSON.stringify(response.user));
+      if (error) {
+        throw error;
       }
 
-      return response;
+      // Buscar dados do usuário na tabela public.users
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id, name, email, profile, photo_url, is_active')
+        .eq('email', email)
+        .single();
+
+      if (userError) {
+        console.warn('Usuário não encontrado na tabela users:', userError);
+      }
+
+      // Salvar preferência de lembrar usuário
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', email);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+      }
+
+      return {
+        success: true,
+        message: 'Login realizado com sucesso!',
+        user: data.user,
+        session: data.session,
+        userData: userData // Dados da tabela public.users
+      };
     } catch (error: any) {
       console.error('Erro no login:', error);
-      throw error;
+      throw {
+        status: error.status || 400,
+        error: error.message || 'Erro interno do servidor'
+      };
     }
   }
 
   // Logout
   public async logout(): Promise<void> {
     try {
-      if (this.token) {
-        await logoutUser(this.token);
+      // Limpar dados locais primeiro
+      localStorage.removeItem('rememberedEmail');
+      
+      // Limpar dados do Supabase Auth do localStorage
+      // Isso força o logout sem fazer requisições de rede
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.startsWith('sb-kdpdpcwjdkcbuvjksokd-auth-token')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Tentar signOut silencioso (pode falhar, mas não importa)
+      try {
+        await supabase.auth.signOut({ scope: 'local' });
+      } catch (signOutError) {
+        // Ignorar erro do signOut, pois já limpamos manualmente
+        console.log('SignOut ignorado, logout manual realizado');
       }
+      
     } catch (error) {
-      console.error('Erro no logout:', error);
-    } finally {
-      // Limpar dados locais
-      this.token = null;
-      this.user = null;
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userData');
-      localStorage.removeItem('userEmail');
-      sessionStorage.removeItem('authToken');
-      sessionStorage.removeItem('userData');
+      console.warn('Erro no logout, mas dados foram limpos:', error);
     }
   }
 
   // Verificar se está autenticado
   public async isAuthenticated(): Promise<boolean> {
-    if (!this.token) {
-      return false;
-    }
-
     try {
-      const isValid = await validateToken(this.token);
-      if (!isValid) {
-        await this.logout();
-        return false;
-      }
-      return true;
+      const { data: { session } } = await supabase.auth.getSession();
+      return !!session;
     } catch (error) {
-      console.error('Erro ao validar token:', error);
-      await this.logout();
+      console.error('Erro ao verificar autenticação:', error);
       return false;
     }
   }
 
-  // Obter token atual
-  public getToken(): string | null {
-    return this.token;
-  }
-
-  // Obter dados do usuário
-  public getUser(): any {
-    return this.user;
-  }
-
-  // Carregar dados do storage
-  private loadFromStorage(): void {
-    // Tentar localStorage primeiro (remember me)
-    let token = localStorage.getItem('authToken');
-    let userData = localStorage.getItem('userData');
-
-    // Se não encontrar, tentar sessionStorage
-    if (!token) {
-      token = sessionStorage.getItem('authToken');
-      userData = sessionStorage.getItem('userData');
-    }
-
-    if (token && userData) {
-      this.token = token;
-      try {
-        this.user = JSON.parse(userData);
-      } catch (error) {
-        console.error('Erro ao parsear dados do usuário:', error);
-        this.logout();
-      }
-    }
-  }
-
-  // Interceptador para requisições HTTP
-  public setupAxiosInterceptor(axiosInstance: any): void {
-    // Request interceptor - adicionar token
-    axiosInstance.interceptors.request.use(
-      (config: any) => {
-        if (this.token) {
-          config.headers.Authorization = `Bearer ${this.token}`;
-        }
-        return config;
-      },
-      (error: any) => {
-        return Promise.reject(error);
-      }
-    );
-
-    // Response interceptor - tratar expiração de token
-    axiosInstance.interceptors.response.use(
-      (response: any) => {
-        return response;
-      },
-      async (error: any) => {
-        if (error.response?.status === 401) {
-          // Token expirado ou inválido
-          await this.logout();
-          // Redirecionar para login
-          window.location.href = '/login';
-        }
-        return Promise.reject(error);
-      }
-    );
-  }
-
-  // Método para refresh token (se implementado no backend)
-  public async refreshToken(): Promise<boolean> {
+  // Obter usuário atual
+  public async getUser(): Promise<any> {
     try {
-      // Implementar refresh token se necessário
-      // Por enquanto, apenas validar token atual
-      return await this.isAuthenticated();
+      const { data: { user } } = await supabase.auth.getUser();
+      return user;
     } catch (error) {
-      console.error('Erro ao renovar token:', error);
-      return false;
+      console.error('Erro ao obter usuário:', error);
+      return null;
+    }
+  }
+
+  // Obter sessão atual
+  public async getSession(): Promise<any> {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session;
+    } catch (error) {
+      console.error('Erro ao obter sessão:', error);
+      return null;
+    }
+  }
+
+  // Obter dados completos do usuário da tabela public.users
+  public async getUserData(): Promise<any> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        return null;
+      }
+
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('id, name, email, profile, photo_url, is_active, created_at, updated_at, last_login')
+        .eq('email', user.email)
+        .single();
+
+      if (error) {
+        console.warn('Usuário não encontrado na tabela users:', error);
+        return null;
+      }
+
+      return userData;
+    } catch (error) {
+      console.error('Erro ao obter dados do usuário:', error);
+      return null;
     }
   }
 }

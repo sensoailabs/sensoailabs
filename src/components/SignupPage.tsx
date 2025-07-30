@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -27,11 +28,11 @@ interface FormErrors {
 }
 
 interface SignupPageProps {
-  onNavigateToLogin?: () => void;
   className?: string;
 }
 
-const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin, className, ...props }) => {
+const SignupPage: React.FC<SignupPageProps> = ({ className, ...props }) => {
+  const navigate = useNavigate();
   const { notification, showNotification, hideNotification } = useNotification();
   
   const [formData, setFormData] = useState<FormData>({
@@ -166,7 +167,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin, className, .
         showNotification('success', 'Redirecionando...', 'Redirecionando para login...');
         setTimeout(() => {
           console.log('Redirecionando para login...');
-          if (onNavigateToLogin) onNavigateToLogin();
+          if (navigate) navigate('/login');
         }, 1000);
       }, 2000);
       
@@ -303,13 +304,12 @@ const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin, className, .
                 {/* Link para login */}
                 <div className="text-center text-sm opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_1.8s_forwards]">
                   Já tem conta?{' '}
-                  <button
-                    type="button"
+                  <Link
+                    to="/login"
                     className="underline underline-offset-4 transition-all duration-200 hover:text-primary hover:scale-105"
-                    onClick={() => onNavigateToLogin ? onNavigateToLogin() : alert('Redirecionamento para página de login')}
                   >
                     Entrar
-                  </button>
+                  </Link>
                 </div>
               </div>
             </form>

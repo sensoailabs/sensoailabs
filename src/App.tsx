@@ -1,56 +1,82 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { supabase } from './lib/supabase';
 import SignupPage from './components/SignupPage';
 import LoginPage from './components/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
-
-type PageType = 'signup' | 'login' | 'forgot-password' | 'reset-password';
+import HomePage from './pages/HomePage';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<PageType>('login');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-  // Detectar rota baseada na URL
   useEffect(() => {
-    const path = window.location.pathname;
-    const search = window.location.search;
-    
-    if (path === '/signup') {
-      setCurrentPage('signup');
-    } else if (path === '/forgot-password') {
-      setCurrentPage('forgot-password');
-    } else if (path === '/reset-password' && search.includes('token=')) {
-      setCurrentPage('reset-password');
-    } else {
-      setCurrentPage('login');
-    }
+    // Verificar se usuário está autenticado
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+
+    checkAuth();
+
+    // Escutar mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const navigateToLogin = () => {
-    setCurrentPage('login');
-    window.history.pushState({}, '', '/login');
-  };
-  
-  const navigateToSignup = () => {
-    setCurrentPage('signup');
-    window.history.pushState({}, '', '/signup');
-  };
-
-  const navigateToForgotPassword = () => {
-    setCurrentPage('forgot-password');
-    window.history.pushState({}, '', '/forgot-password');
-  };
-
-  // Renderizar página baseada no estado
-  switch (currentPage) {
-    case 'signup':
-      return <SignupPage onNavigateToLogin={navigateToLogin} />;
-    case 'forgot-password':
-      return <ForgotPasswordPage onNavigateToLogin={navigateToLogin} />;
-    case 'reset-password':
-      return <ResetPasswordPage />;
-    default:
-      return <LoginPage onNavigateToSignup={navigateToSignup} onNavigateToForgotPassword={navigateToForgotPassword} />;
+  // Loading state
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Carregando...</div>
+      </div>
+    );
   }
+
+  return (
+    <Router>
+      <Routes>
+        {/* Rotas protegidas - só acessíveis se autenticado */}
+        <Route 
+          path="/home" 
+          element={isAuthenticated ? <HomePage /> : <Navigate to="/login" />} 
+        />
+        
+        {/* Rotas públicas - só acessíveis se não autenticado */}
+        <Route 
+          path="/login" 
+          element={!isAuthenticated ? <LoginPage /> : <Navigate to="/home" />} 
+        />
+        <Route 
+          path="/signup" 
+          element={!isAuthenticated ? <SignupPage /> : <Navigate to="/home" />} 
+        />
+        <Route 
+          path="/forgot-password" 
+          element={!isAuthenticated ? <ForgotPasswordPage /> : <Navigate to="/home" />} 
+        />
+        <Route 
+          path="/reset-password" 
+          element={!isAuthenticated ? <ResetPasswordPage /> : <Navigate to="/home" />} 
+        />
+        
+        {/* Rota raiz - redireciona baseado na autenticação */}
+        <Route 
+          path="/" 
+          element={<Navigate to={isAuthenticated ? "/home" : "/login"} />} 
+        />
+        
+        {/* Rota catch-all */}
+        <Route 
+          path="*" 
+          element={<Navigate to={isAuthenticated ? "/home" : "/login"} />} 
+        />
+      </Routes>
+    </Router>
+  );
 }
 
 export default App;

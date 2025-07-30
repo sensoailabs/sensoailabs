@@ -263,7 +263,6 @@ const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin, className, .
                         setErrors(prev => ({ ...prev, confirmPassword: confirmError }));
                       }
                     }}
-                    error={errors.password}
                     showStrengthIndicator={true}
                   />
                 </div>

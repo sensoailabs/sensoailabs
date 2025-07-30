@@ -124,13 +124,170 @@
   }
 }
 
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
+/* Animações customizadas para formas orgânicas */
+@keyframes pulse-slow {
+  0%, 100% { 
+    transform: scale(1) rotate(0deg); 
+    opacity: 0.15; 
   }
-  to {
-    opacity: 1;
-    transform: scale(1);
+  50% { 
+    transform: scale(1.05) rotate(2deg); 
+    opacity: 0.25; 
+  }
+}
+
+@keyframes pulse-slow-delayed {
+  0%, 100% { 
+    transform: scale(1) rotate(0deg); 
+    opacity: 0.1; 
+  }
+  50% { 
+    transform: scale(1.08) rotate(-3deg); 
+    opacity: 0.2; 
+  }
+}
+
+@keyframes pulse-slow-reverse {
+  0%, 100% { 
+    transform: scale(1.02) rotate(0deg); 
+    opacity: 0.08; 
+  }
+  50% { 
+    transform: scale(1) rotate(1deg); 
+    opacity: 0.18; 
+  }
+}
+
+/* Novas animações orgânicas com movimento */
+@keyframes organic-float {
+  0% { 
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    opacity: 0.15;
+  }
+  25% { 
+    transform: translate(-45%, -55%) scale(1.05) rotate(90deg);
+    border-radius: 40% 60% 50% 50% / 70% 30% 60% 40%;
+    opacity: 0.25;
+  }
+  50% { 
+    transform: translate(-55%, -45%) scale(1.1) rotate(180deg);
+    border-radius: 70% 30% 40% 60% / 40% 70% 30% 60%;
+    opacity: 0.2;
+  }
+  75% { 
+    transform: translate(-50%, -50%) scale(1.03) rotate(270deg);
+    border-radius: 50% 50% 60% 40% / 60% 40% 70% 30%;
+    opacity: 0.18;
+  }
+  100% { 
+    transform: translate(-50%, -50%) scale(1) rotate(360deg);
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    opacity: 0.15;
+  }
+}
+
+@keyframes organic-drift {
+  0% { 
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    border-radius: 40% 60% 70% 30% / 40% 70% 30% 60%;
+    opacity: 0.1;
+  }
+  33% { 
+    transform: translate(20px, -30px) scale(1.08) rotate(120deg);
+    border-radius: 60% 40% 30% 70% / 70% 30% 60% 40%;
+    opacity: 0.18;
+  }
+  66% { 
+    transform: translate(-25px, 15px) scale(0.95) rotate(240deg);
+    border-radius: 30% 70% 60% 40% / 50% 50% 40% 60%;
+    opacity: 0.15;
+  }
+  100% { 
+    transform: translate(0, 0) scale(1) rotate(360deg);
+    border-radius: 40% 60% 70% 30% / 40% 70% 30% 60%;
+    opacity: 0.1;
+  }
+}
+
+@keyframes organic-wave {
+  0% { 
+    transform: translate(0, 0) scale(1.02) rotate(0deg);
+    border-radius: 70% 30% 60% 40% / 30% 60% 40% 70%;
+    opacity: 0.08;
+  }
+  20% { 
+    transform: translate(-15px, -20px) scale(1.1) rotate(72deg);
+    border-radius: 50% 50% 40% 60% / 60% 40% 70% 30%;
+    opacity: 0.15;
+  }
+  40% { 
+    transform: translate(10px, -35px) scale(0.98) rotate(144deg);
+    border-radius: 60% 40% 70% 30% / 40% 60% 30% 70%;
+    opacity: 0.12;
+  }
+  60% { 
+    transform: translate(25px, 10px) scale(1.05) rotate(216deg);
+    border-radius: 40% 60% 30% 70% / 70% 30% 60% 40%;
+    opacity: 0.18;
+  }
+  80% { 
+    transform: translate(-10px, 25px) scale(1) rotate(288deg);
+    border-radius: 30% 70% 50% 50% / 50% 50% 40% 60%;
+    opacity: 0.1;
+  }
+  100% { 
+    transform: translate(0, 0) scale(1.02) rotate(360deg);
+    border-radius: 70% 30% 60% 40% / 30% 60% 40% 70%;
+    opacity: 0.08;
+  }
+}
+
+/* Animação que percorre as extremidades da tela */
+@keyframes organic-edge {
+  0% { 
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    border-radius: 50% 50% 40% 60% / 60% 40% 50% 50%;
+    opacity: 0.2;
+  }
+  12.5% { 
+    transform: translate(calc(100vw - 60vh), 0) scale(1.1) rotate(45deg);
+    border-radius: 40% 60% 50% 50% / 50% 50% 60% 40%;
+    opacity: 0.25;
+  }
+  25% { 
+    transform: translate(calc(100vw - 60vh), calc(100vh - 60vh)) scale(0.9) rotate(90deg);
+    border-radius: 60% 40% 60% 40% / 40% 60% 40% 60%;
+    opacity: 0.3;
+  }
+  37.5% { 
+    transform: translate(0, calc(100vh - 60vh)) scale(1.05) rotate(135deg);
+    border-radius: 50% 50% 30% 70% / 70% 30% 50% 50%;
+    opacity: 0.22;
+  }
+  50% { 
+    transform: translate(calc(50vw - 30vh), calc(50vh - 30vh)) scale(1.2) rotate(180deg);
+    border-radius: 40% 60% 40% 60% / 60% 40% 60% 40%;
+    opacity: 0.35;
+  }
+  62.5% { 
+    transform: translate(calc(100vw - 60vh), calc(25vh)) scale(0.95) rotate(225deg);
+    border-radius: 60% 40% 50% 50% / 50% 50% 40% 60%;
+    opacity: 0.28;
+  }
+  75% { 
+    transform: translate(calc(25vw), 0) scale(1.1) rotate(270deg);
+    border-radius: 50% 50% 60% 40% / 40% 60% 50% 50%;
+    opacity: 0.24;
+  }
+  87.5% { 
+    transform: translate(0, calc(25vh)) scale(1) rotate(315deg);
+    border-radius: 40% 60% 30% 70% / 70% 30% 60% 40%;
+    opacity: 0.26;
+  }
+  100% { 
+    transform: translate(0, 0) scale(1) rotate(360deg);
+    border-radius: 50% 50% 40% 60% / 60% 40% 50% 50%;
+    opacity: 0.2;
   }
 }

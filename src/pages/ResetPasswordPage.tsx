@@ -12,6 +12,7 @@ import {
   handlePasswordResetError
 } from '../services/passwordResetService';
 import logoSensoAI from '../assets/logo_sensoai.svg';
+import backgroundImage from '../assets/background.png';
 
 // Componente Alert simples
 const Alert: React.FC<{ children: React.ReactNode; variant?: 'default' | 'destructive'; className?: string }> = ({ children, variant = 'default', className = '' }) => (
@@ -184,8 +185,16 @@ const ResetPasswordPage: React.FC = () => {
   // Estado de carregamento da validação do token
   if (isValidatingToken) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-sm w-full space-y-8 opacity-0 translate-y-8 animate-[fadeInUp_0.8s_ease-out_forwards]">
+      <div className="relative min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        {/* Background com imagem */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
+          style={{backgroundImage: `url(${backgroundImage})`}}
+        >
+          {/* Overlay com efeito vidro */}
+          <div className="absolute inset-0 bg-[#D9D9D9]/15 backdrop-blur-[12px]"></div>
+        </div>
+        <div className="relative z-10 max-w-sm w-full space-y-8 opacity-0 translate-y-8 animate-[fadeInUp_0.8s_ease-out_forwards]">
           <Card className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white/95 backdrop-blur-sm">
             <CardContent className="pt-6 opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_0.4s_forwards]">
               <div className="text-center">
@@ -202,8 +211,16 @@ const ResetPasswordPage: React.FC = () => {
   // Token inválido ou expirado
   if (!tokenValid) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-sm w-full space-y-8 opacity-0 translate-y-8 animate-[fadeInUp_0.8s_ease-out_forwards]">
+      <div className="relative min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        {/* Background com imagem */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
+          style={{backgroundImage: `url(${backgroundImage})`}}
+        >
+          {/* Overlay com efeito vidro */}
+          <div className="absolute inset-0 bg-[#D9D9D9]/15 backdrop-blur-[12px]"></div>
+        </div>
+        <div className="relative z-10 max-w-sm w-full space-y-8 opacity-0 translate-y-8 animate-[fadeInUp_0.8s_ease-out_forwards]">
           <Card className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white/95 backdrop-blur-sm">
             <CardHeader className="text-center">
               <div className="flex justify-center mb-2 opacity-0 -translate-y-4 animate-[fadeInDown_0.6s_ease-out_0.2s_forwards]">
@@ -253,8 +270,16 @@ const ResetPasswordPage: React.FC = () => {
   // Sucesso na redefinição
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-sm w-full space-y-8 opacity-0 translate-y-8 animate-[fadeInUp_0.8s_ease-out_forwards]">
+      <div className="relative min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        {/* Background com imagem */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
+          style={{backgroundImage: `url(${backgroundImage})`}}
+        >
+          {/* Overlay com efeito vidro */}
+          <div className="absolute inset-0 bg-[#D9D9D9]/15 backdrop-blur-[12px]"></div>
+        </div>
+        <div className="relative z-10 max-w-sm w-full space-y-8 opacity-0 translate-y-8 animate-[fadeInUp_0.8s_ease-out_forwards]">
           <Card className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white/95 backdrop-blur-sm">
             <CardHeader className="text-center">
               <div className="flex justify-center mb-2 opacity-0 -translate-y-4 animate-[fadeInDown_0.6s_ease-out_0.2s_forwards]">
@@ -295,8 +320,16 @@ const ResetPasswordPage: React.FC = () => {
 
   // Formulário de redefinição
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-sm w-full space-y-8 opacity-0 translate-y-8 animate-[fadeInUp_0.8s_ease-out_forwards]">
+    <div className="relative min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      {/* Background com imagem */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
+        style={{backgroundImage: `url(${backgroundImage})`}}
+      >
+        {/* Overlay com efeito vidro */}
+        <div className="absolute inset-0 bg-[#D9D9D9]/15 backdrop-blur-[12px]"></div>
+      </div>
+      <div className="relative z-10 max-w-sm w-full space-y-8 opacity-0 translate-y-8 animate-[fadeInUp_0.8s_ease-out_forwards]">
         <Card className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white/95 backdrop-blur-sm">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-2 opacity-0 -translate-y-4 animate-[fadeInDown_0.6s_ease-out_0.2s_forwards]">

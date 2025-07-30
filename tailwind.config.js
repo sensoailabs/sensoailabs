@@ -15,6 +15,15 @@ export default {
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
+  		animation: {
+  			'pulse-slow': 'pulse-slow 6s ease-in-out infinite',
+  			'pulse-slow-delayed': 'pulse-slow-delayed 8s ease-in-out infinite 2s',
+  			'pulse-slow-reverse': 'pulse-slow-reverse 10s ease-in-out infinite 4s',
+  			'organic-float': 'organic-float 20s ease-in-out infinite',
+  			'organic-drift': 'organic-drift 15s ease-in-out infinite 3s',
+  			'organic-wave': 'organic-wave 25s ease-in-out infinite 7s',
+  			'organic-edge': 'organic-edge 30s ease-in-out infinite 5s',
+  		},
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',

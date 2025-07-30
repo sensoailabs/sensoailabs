@@ -10,6 +10,7 @@ import { registerUser, getErrorMessage, getFieldErrors, type RegisterRequest } f
 import { cn } from '@/lib/utils';
 import logoSensoAI from '../assets/logo_sensoai.svg';
 import coverRegister from '../assets/cover-register.png';
+import backgroundImage from '../assets/background.png';
 
 interface FormData {
   fullName: string;
@@ -194,8 +195,16 @@ const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin, className, .
                      Object.values(formData).every(value => value.trim() !== '');
 
   return (
-    <div className={cn("flex min-h-svh w-full items-center justify-center p-6 md:p-10 bg-gray-100", className)} {...props}>
-      <div className="w-full max-w-4xl opacity-0 translate-y-8 animate-[fadeInUp_0.8s_ease-out_forwards]">
+    <div className={cn("relative flex min-h-svh w-full items-center justify-center p-6 md:p-10", className)} {...props}>
+      {/* Background com imagem */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
+        style={{backgroundImage: `url(${backgroundImage})`}}
+      >
+        {/* Overlay com efeito vidro */}
+        <div className="absolute inset-0 bg-[#D9D9D9]/15 backdrop-blur-[12px]"></div>
+      </div>
+      <div className="relative z-10 w-full max-w-4xl opacity-0 translate-y-8 animate-[fadeInUp_0.8s_ease-out_forwards]">
         <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white/95 backdrop-blur-sm">
           <CardContent className="grid p-0 md:grid-cols-2">
             <form onSubmit={handleSubmit} className="p-16 opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_0.6s_forwards]">

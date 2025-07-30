@@ -1,9 +1,6 @@
 import { useId } from "react"
 import {
-  FileTextIcon,
   HomeIcon,
-  LayersIcon,
-  UsersIcon,
   Bell,
   MessageSquare,
   ArrowRightIcon,
@@ -35,9 +32,7 @@ import {
 // Navigation links with icons for desktop icon-only navigation
 const navigationLinks = [
   { href: "#", label: "Dashboard", icon: HomeIcon, active: true },
-  { href: "#", label: "Projects", icon: LayersIcon },
-  { href: "#", label: "Documentation", icon: FileTextIcon },
-  { href: "#", label: "Team", icon: UsersIcon },
+  { href: "#", label: "Chat com IA", icon: MessageSquare, active: false },
 ]
 
 export default function Header() {
@@ -170,7 +165,7 @@ export default function Header() {
             }}
           >
             Enviar feedback
-            <MessageSquare className="-me-1 opacity-60" size={16} aria-hidden="true" />
+            <ArrowRightIcon className="-me-1 opacity-60" size={16} aria-hidden="true" />
           </Button>
           {/* Notification icon */}
           <TooltipProvider>

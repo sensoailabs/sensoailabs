@@ -45,9 +45,7 @@ export function CardAplicativos({
   const cardBackground = backgroundGradient || defaultGradient;
 
   return (
-    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden w-full max-w-[296px]" style={{
-      background: cardBackground
-    }}>
+    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden w-full max-w-[296px]">
       <div className="p-5">
         {/* Ícone e Categoria */}
         <div className="flex items-center gap-2 mb-4">
@@ -70,7 +68,7 @@ export function CardAplicativos({
         </p>
         
         {/* Tags */}
-        <div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-0 hide-scrollbar" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+        <div className="flex gap-1 overflow-x-auto whitespace-nowrap pb-0 hide-scrollbar" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
           {tags.map((tag, index) => (
             <span 
               key={index}

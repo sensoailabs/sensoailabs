@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import backgroundImage from '../assets/background.png';
 import { authService } from '../services/authService';
-import { Grid3X3, MessageSquare, Eye, CheckCircle } from 'lucide-react';
+import { Grid3X3, MessageSquare, Eye, CheckCircle, UserCheck } from 'lucide-react';
 import {
   Tabs,
   TabsContent,
@@ -103,14 +103,12 @@ export default function HomePage() {
                     icon={Eye}
                     categoria="Anonimizador de dados"
                     titulo="Anonimize dados em lote"
-                    descricao="Anonimize dados em lote. Lorem ipsum dolor sit amet, consectetur lorem ipsum dolor"
+                    descricao="Anonimize informações sensíveis de capturas de telas e documentos automaticamente"
                     tags={[
                       { label: "Geral", type: "primary" },
                       { label: "Benchmarking", type: "primary" },
                       { label: "Navegação guiada", type: "primary" }
-                    ]}
-                    tagsExtras={2}
-                    imagemSrc="/src/assets/modulo-imagem.png"
+                    ]}                                    
                     imagemAlt="Módulo Anonimizador"
                     tagsPrimaryBgColor="#EBF2FF"
                     tagsPrimaryColor="#4E67FF"
@@ -129,28 +127,29 @@ export default function HomePage() {
                       { label: "Conversação", type: "primary" },
                       { label: "Análise", type: "primary" }
                     ]}
-                    tagsExtras={1}
-                    tagsPrimaryBgColor="#ECFDF5"
-                    tagsPrimaryColor="#1DA55C"
-                  />
-{/* Card 2 - Chat Inteligente (usando componente genérico) */}
-                  <CardAplicativos
-                    icon={MessageSquare}
-                    iconBgColor="#1DA55C"
-                    categoria="Senso Chat"
-                    categoriaColor="#1DA55C"
-                    titulo="Converse com IA da Senso"
-                    descricao="Você pode conversar de forma segura com a IA da Senso"
-                    tags={[
-                      { label: "Geral", type: "primary" },
-                      { label: "Conversação", type: "primary" },
-                      { label: "Análise", type: "primary" }
-                    ]}
-                    tagsExtras={1}
+                  
                     tagsPrimaryBgColor="#ECFDF5"
                     tagsPrimaryColor="#1DA55C"
                   />
 
+                  {/* Card 3 - Assistente de recrutamento */}
+                  <CardAplicativos
+                    icon={UserCheck}
+                    iconBgColor="#954EFF"
+                    categoria="Assistente de recrutamento"
+                    categoriaColor="#954EFF"
+                    titulo="Crie roteiros de recrutamento"
+                    descricao="Desenvolva roteiros personalizados de recrutamento e screening automaticamente"
+                    tags={[
+                      { label: "Geral", type: "primary" },
+                      { label: "Recrutamento", type: "primary" },
+                      { label: "Screening", type: "primary" }
+                    ]}                                     
+                    imagemAlt="Módulo Assistente de Recrutamento"
+                    tagsPrimaryBgColor="#F3EDFF"
+                    tagsPrimaryColor="#954EFF"
+                  />                  
+                  
                 </div>
               </TabsContent>
               <TabsContent value="novo-chat">

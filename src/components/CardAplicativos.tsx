@@ -6,55 +6,46 @@ interface Tag {
 }
 
 interface CardAplicativosProps {
-  icon: LucideIcon;
+  icon?: LucideIcon;
+  iconSrc?: string;
   iconBgColor?: string;
-  categoria: string;
-  categoriaColor?: string;
   titulo: string;
   descricao: string;
   tags: Tag[];
   tagsExtras?: number;
   imagemSrc?: string;
   imagemAlt?: string;
-  backgroundGradient?: string;
-  tagsPrimaryColor?: string;
-  tagsPrimaryBgColor?: string;
 }
 
 export function CardAplicativos({
   icon: Icon,
+  iconSrc,
   iconBgColor = '#4E67FF',
-  categoria,
-  categoriaColor = '#4E67FF',
   titulo,
   descricao,
   tags,
   tagsExtras = 0,
   imagemSrc,
-  imagemAlt,
-  backgroundGradient,
-  tagsPrimaryColor,
-  tagsPrimaryBgColor
+  imagemAlt
 }: CardAplicativosProps) {
-  // Define cores das tags baseadas na categoria se não fornecidas
-  const primaryTagColor = tagsPrimaryColor || categoriaColor;
-  const primaryTagBgColor = tagsPrimaryBgColor || `${categoriaColor}20`; // 20% de opacidade
-  
-  // Define gradiente baseado na cor da categoria se não fornecido
-  const defaultGradient = `linear-gradient(180deg, #FFF 62.85%, ${categoriaColor}15 100%)`;
-  const cardBackground = backgroundGradient || defaultGradient;
-
   return (
     <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden w-full max-w-[296px]">
       <div className="p-5">
-        {/* Ícone e Categoria */}
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ backgroundColor: iconBgColor }}>
-            <Icon className="w-4 h-4 text-white" />
+        {/* Ícone */}
+        <div className="flex justify-start mb-4">
+          <div className="w-[60px] h-[60px] rounded-lg flex items-center justify-center overflow-hidden">
+            {iconSrc ? (
+              <img 
+                src={iconSrc} 
+                alt="App Icon" 
+                className="w-full h-full object-cover"
+              />
+            ) : Icon ? (
+              <div className="w-full h-full rounded-lg flex items-center justify-center" style={{ backgroundColor: iconBgColor }}>
+                <Icon className="w-8 h-8 text-white" />
+              </div>
+            ) : null}
           </div>
-          <span className="text-[10px] font-semibold" style={{ color: categoriaColor }}>
-            {categoria.toUpperCase()}
-          </span>
         </div>
         
         {/* Título */}
@@ -72,14 +63,7 @@ export function CardAplicativos({
           {tags.map((tag, index) => (
             <span 
               key={index}
-              className="px-3 py-1 text-[10px] font-semibold rounded-[6px] flex-shrink-0"
-              style={tag.type === 'primary' ? {
-                backgroundColor: primaryTagBgColor,
-                color: primaryTagColor
-              } : {
-                backgroundColor: '#f3f4f6',
-                color: '#6b7280'
-              }}
+              className="px-3 py-1 text-[10px] font-semibold rounded-[6px] flex-shrink-0 bg-gray-100 text-gray-600"
             >
               {tag.label}
             </span>

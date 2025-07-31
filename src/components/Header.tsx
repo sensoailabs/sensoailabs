@@ -159,13 +159,14 @@ export default function Header() {
           {/* Feedback button */}
           <Button 
             variant="outline" 
-            className="hidden md:flex text-white border-0 rounded-full"
+            size="sm"
+            className="hidden md:flex text-white border-0 rounded-full px-3 py-1 h-8 text-xs"
             style={{
               background: 'linear-gradient(90deg, #4E67FF 0%, #4EAFFF 79.07%, #98D4F8 102.23%)'
             }}
           >
             Enviar feedback
-            <ArrowRightIcon className="-me-1 opacity-60" size={16} aria-hidden="true" />
+            <ArrowRightIcon className="-me-1 opacity-60" size={14} aria-hidden="true" />
           </Button>
           {/* Notification icon */}
           <TooltipProvider>

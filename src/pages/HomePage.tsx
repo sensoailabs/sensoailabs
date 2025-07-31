@@ -1,7 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Header from '../components/Header';
+import { CardAplicativos } from '../components/CardAplicativos';
+import ChatInput from '../components/ChatInput';
 import backgroundImage from '../assets/background.png';
-import { authService } from '../services/authService';
+import iconAppAnonimizador from '../assets/icon-app-anonimizador.png';
+import iconAppSensoChat from '../assets/icon-app-senso-chat.png';
+import iconAppRecrutamento from '../assets/icon-app-recrutamento.png';
+import { useUser } from '../contexts/UserContext';
 import { Grid3X3, MessageSquare, Eye, CheckCircle, UserCheck } from 'lucide-react';
 import {
   Tabs,
@@ -9,26 +14,9 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { CardAplicativos } from '@/components/CardAplicativos';
 
 export default function HomePage() {
-  const [userName, setUserName] = useState<string>('');
-  const [userPhoto, setUserPhoto] = useState<string>('');
-
-  useEffect(() => {
-    const getUser = async () => {
-      const user = await authService.getUser();
-      if (user) {
-        const userData = await authService.getUserData();
-        const name = userData?.name || user.email?.split('@')[0] || 'Usuário';
-        const firstName = name.split(' ')[0];
-        setUserName(firstName);
-        setUserPhoto(userData?.photo_url || '');
-      }
-    };
-
-    getUser();
-  }, []);
+  const { userData } = useUser();
 
   const getInitials = (name: string) => {
     return name
@@ -38,6 +26,10 @@ export default function HomePage() {
       .toUpperCase()
       .slice(0, 2);
   };
+
+  const userName = userData?.name || 'Usuário';
+  const userPhoto = userData?.photo_url || '';
+  const firstName = userName.split(' ')[0];
 
   return (
     <div className="min-h-screen bg-background">
@@ -56,9 +48,9 @@ export default function HomePage() {
         </div>
 
         {/* Seção de Saudação */}
-        <div className="relative z-10 flex flex-col items-center space-y-6 w-full" style={{marginTop: '40px'}}>
+        <div className="relative z-10 flex flex-col items-center space-y-3 w-full" style={{marginTop: '40px'}}>
           {/* Foto do usuário */}
-          <div className="w-24 h-24 rounded-full overflow-hidden bg-primary flex items-center justify-center text-primary-foreground text-2xl font-semibold shadow-lg">
+          <div className="w-24 h-24 rounded-full overflow-hidden bg-primary flex items-center justify-center text-primary-foreground text-2xl font-semibold">
             {userPhoto ? (
               <img 
                 src={userPhoto} 
@@ -66,19 +58,19 @@ export default function HomePage() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span>{getInitials(userName || 'U')}</span>
+              <span>{getInitials(userName)}</span>
             )}
           </div>
 
           {/* Mensagem de boas-vindas */}
-          <div className="space-y-2 text-left w-full max-w-4xl">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-              Hello {userName ? userName.split(' ')[0] : 'Usuário'}, que bom ter você de volta ao Senso AI =)
+          <div className="space-y-2 text-center w-full max-w-4xl">
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">
+              Hello {firstName}, que bom ter você de volta ao Senso AI =)
             </h1>
           </div>
 
           {/* Componente de Tabs */}
-          <div className="w-full max-w-4xl mt-8">
+          <div className="w-full max-w-4xl" style={{marginTop: '48px'}}>
             <Tabs defaultValue="meus-aplicativos" className="items-center">
               <TabsList className="bg-white rounded-full p-1 shadow-sm">
                 <TabsTrigger 
@@ -100,63 +92,45 @@ export default function HomePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
                   {/* Card principal - Anonimizador de dados (componente genérico) */}
                   <CardAplicativos
-                    icon={Eye}
-                    categoria="Anonimizador de dados"
-                    titulo="Anonimize dados em lote"
+                    iconSrc={iconAppAnonimizador}
+                    titulo="Anonimizador de dados"
                     descricao="Anonimize informações sensíveis de capturas de telas e documentos automaticamente"
                     tags={[
                       { label: "Geral", type: "primary" },
                       { label: "Benchmarking", type: "primary" },
                       { label: "Navegação guiada", type: "primary" }
-                    ]}                                    
-                    imagemAlt="Módulo Anonimizador"
-                    tagsPrimaryBgColor="#EBF2FF"
-                    tagsPrimaryColor="#4E67FF"
+                    ]}
                   />
 
                   {/* Card 2 - Chat Inteligente (usando componente genérico) */}
                   <CardAplicativos
-                    icon={MessageSquare}
-                    iconBgColor="#1DA55C"
-                    categoria="Senso Chat"
-                    categoriaColor="#1DA55C"
-                    titulo="Converse com IA da Senso"
+                    iconSrc={iconAppSensoChat}
+                    titulo="Senso Chat"
                     descricao="Você pode conversar de forma segura com a IA da Senso"
                     tags={[
                       { label: "Geral", type: "primary" },
                       { label: "Conversação", type: "primary" },
                       { label: "Análise", type: "primary" }
                     ]}
-                  
-                    tagsPrimaryBgColor="#ECFDF5"
-                    tagsPrimaryColor="#1DA55C"
                   />
 
                   {/* Card 3 - Assistente de recrutamento */}
                   <CardAplicativos
-                    icon={UserCheck}
-                    iconBgColor="#954EFF"
-                    categoria="Assistente de recrutamento"
-                    categoriaColor="#954EFF"
-                    titulo="Crie roteiros de recrutamento"
+                    iconSrc={iconAppRecrutamento}
+                    titulo="Assistente de recrutamento"
                     descricao="Desenvolva roteiros personalizados de recrutamento e screening automaticamente"
                     tags={[
                       { label: "Geral", type: "primary" },
                       { label: "Recrutamento", type: "primary" },
                       { label: "Screening", type: "primary" }
-                    ]}                                     
-                    imagemAlt="Módulo Assistente de Recrutamento"
-                    tagsPrimaryBgColor="#F3EDFF"
-                    tagsPrimaryColor="#954EFF"
+                    ]}
                   />                  
                   
                 </div>
               </TabsContent>
               <TabsContent value="novo-chat">
-                <div className="w-full">
-                  <p className="text-muted-foreground p-4 text-left text-xs w-full">
-                    Conteúdo para Novo chat
-                  </p>
+                <div className="w-full flex justify-center mt-8">
+                  <ChatInput />
                 </div>
               </TabsContent>
             </Tabs>

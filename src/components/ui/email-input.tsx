@@ -9,6 +9,7 @@ interface EmailInputProps {
   onChange: (value: string) => void;
   error?: string;
   placeholder?: string;
+  disabled?: boolean;
 }
 
 export const EmailInput: React.FC<EmailInputProps> = ({
@@ -16,7 +17,8 @@ export const EmailInput: React.FC<EmailInputProps> = ({
   value,
   onChange,
   error,
-  placeholder = "usuario"
+  placeholder = "usuario",
+  disabled = false
 }) => {
   const generatedId = useId();
   const inputId = id || generatedId;
@@ -34,8 +36,12 @@ export const EmailInput: React.FC<EmailInputProps> = ({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
         />
-        <span className="inline-flex items-center rounded-r-md border border-l-0 border-input bg-muted px-3 text-sm text-muted-foreground">
+        <span className={cn(
+          "inline-flex items-center rounded-r-md border border-l-0 border-input px-3 text-sm",
+          disabled ? "bg-muted text-muted-foreground/50" : "bg-muted text-muted-foreground"
+        )}>
           @sensoramadesign.com.br
         </span>
       </div>

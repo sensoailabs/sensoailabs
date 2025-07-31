@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
+import { UserProvider } from './contexts/UserContext';
 import SignupPage from './components/SignupPage';
 import LoginPage from './components/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -38,43 +39,45 @@ function App() {
 
   return (
     <Router>
-      <Routes>
-        {/* Rotas protegidas - só acessíveis se autenticado */}
-        <Route 
-          path="/home" 
-          element={isAuthenticated ? <HomePage /> : <Navigate to="/login" />} 
-        />
-        
-        {/* Rotas públicas - só acessíveis se não autenticado */}
-        <Route 
-          path="/login" 
-          element={!isAuthenticated ? <LoginPage /> : <Navigate to="/home" />} 
-        />
-        <Route 
-          path="/signup" 
-          element={!isAuthenticated ? <SignupPage /> : <Navigate to="/home" />} 
-        />
-        <Route 
-          path="/forgot-password" 
-          element={!isAuthenticated ? <ForgotPasswordPage /> : <Navigate to="/home" />} 
-        />
-        <Route 
-          path="/reset-password" 
-          element={!isAuthenticated ? <ResetPasswordPage /> : <Navigate to="/home" />} 
-        />
-        
-        {/* Rota raiz - redireciona baseado na autenticação */}
-        <Route 
-          path="/" 
-          element={<Navigate to={isAuthenticated ? "/home" : "/login"} />} 
-        />
-        
-        {/* Rota catch-all */}
-        <Route 
-          path="*" 
-          element={<Navigate to={isAuthenticated ? "/home" : "/login"} />} 
-        />
-      </Routes>
+      <UserProvider>
+        <Routes>
+          {/* Rotas protegidas - só acessíveis se autenticado */}
+          <Route 
+            path="/home" 
+            element={isAuthenticated ? <HomePage /> : <Navigate to="/login" />} 
+          />
+          
+          {/* Rotas públicas - só acessíveis se não autenticado */}
+          <Route 
+            path="/login" 
+            element={!isAuthenticated ? <LoginPage /> : <Navigate to="/home" />} 
+          />
+          <Route 
+            path="/signup" 
+            element={!isAuthenticated ? <SignupPage /> : <Navigate to="/home" />} 
+          />
+          <Route 
+            path="/forgot-password" 
+            element={!isAuthenticated ? <ForgotPasswordPage /> : <Navigate to="/home" />} 
+          />
+          <Route 
+            path="/reset-password" 
+            element={!isAuthenticated ? <ResetPasswordPage /> : <Navigate to="/home" />} 
+          />
+          
+          {/* Rota raiz - redireciona baseado na autenticação */}
+          <Route 
+            path="/" 
+            element={<Navigate to={isAuthenticated ? "/home" : "/login"} />} 
+          />
+          
+          {/* Rota catch-all */}
+          <Route 
+            path="*" 
+            element={<Navigate to={isAuthenticated ? "/home" : "/login"} />} 
+          />
+        </Routes>
+      </UserProvider>
     </Router>
   );
 }

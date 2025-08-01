@@ -13,7 +13,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { type Project, type ProjectFormData } from "@/types/project"
 
 interface ProjectModalProps {
@@ -147,18 +146,7 @@ export function ProjectModal({
             </div>
           </div>
 
-          {instructions && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Preview das instruções</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted p-3 rounded-md">
-                  {instructions || "Nenhuma instrução definida"}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+
         </div>
 
         <DialogFooter>

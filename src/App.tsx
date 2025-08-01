@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { UserProvider } from './contexts/UserContext';
+import { ToastProvider } from './components/providers/toast-provider';
 import SignupPage from './components/SignupPage';
 import LoginPage from './components/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -41,7 +42,8 @@ function App() {
   return (
     <Router>
       <UserProvider>
-        <Routes>
+        <ToastProvider>
+          <Routes>
           {/* Rotas protegidas - só acessíveis se autenticado */}
           <Route 
             path="/home" 
@@ -81,7 +83,8 @@ function App() {
             path="*" 
             element={<Navigate to={isAuthenticated ? "/home" : "/login"} />} 
           />
-        </Routes>
+          </Routes>
+        </ToastProvider>
       </UserProvider>
     </Router>
   );

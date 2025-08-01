@@ -1,11 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { ChevronRight, Folder, Plus, Search, MessageSquare } from "lucide-react"
+import { ChevronRight, Folder, Plus, MessageSquare } from "lucide-react"
 import { useProjects, type Project } from "@/hooks/use-projects"
 import { ProjectModal } from "@/components/ProjectModal"
 import { ProjectActions } from "@/components/ProjectActions"
-import { Input } from "@/components/ui/input"
 import {
   Collapsible,
   CollapsibleContent,
@@ -31,18 +30,11 @@ export function NavMain() {
     createProject,
     updateProject,
     deleteProject,
-    setActiveProject,
-    searchProjects
+    setActiveProject
   } = useProjects()
 
   const [showCreateModal, setShowCreateModal] = React.useState(false)
   const [editingProject, setEditingProject] = React.useState<Project | null>(null)
-  const [searchQuery, setSearchQuery] = React.useState("")
-  const [filteredProjects, setFilteredProjects] = React.useState(projects)
-
-  React.useEffect(() => {
-    setFilteredProjects(searchProjects(searchQuery))
-  }, [searchQuery, projects, searchProjects])
 
   const handleCreateProject = async (data: { name: string; instructions: string }) => {
     try {
@@ -105,25 +97,8 @@ export function NavMain() {
             </SidebarMenuButton>
           </SidebarMenuItem>
 
-          {/* Campo de Busca */}
-          {projects.length > 0 && (
-            <SidebarMenuItem>
-              <div className="px-2 py-1">
-                <div className="relative">
-                  <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar projetos..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-8 h-8 text-xs"
-                  />
-                </div>
-              </div>
-            </SidebarMenuItem>
-          )}
-
           {/* Lista de Projetos */}
-          {filteredProjects.map((project) => (
+          {projects.map((project) => (
             <Collapsible
               key={project.id}
               asChild
@@ -131,31 +106,28 @@ export function NavMain() {
               className="group/collapsible"
             >
               <SidebarMenuItem>
-                <CollapsibleTrigger asChild>
-                  <SidebarMenuButton 
-                    tooltip={project.name}
-                    onClick={() => handleProjectClick(project)}
-                    className={`group ${project.isActive ? 'bg-accent text-accent-foreground' : ''}`}
-                  >
-                    <Folder className={project.isActive ? 'text-primary' : ''} />
-                    <span className="flex-1 truncate">{project.name}</span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                        {project.chatCount}
-                      </span>
-                      <ProjectActions
-                        project={project}
-                        onEdit={handleEditProject}
-                        onDelete={handleDeleteProject}
-                        isDeleting={isDeleting}
-                      />
+                <div className="flex items-center group">
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton 
+                      tooltip={project.name}
+                      onClick={() => handleProjectClick(project)}
+                      className={`flex-1 ${project.isActive ? 'bg-accent text-accent-foreground' : ''}`}
+                    >
+                      <Folder className={project.isActive ? 'text-primary' : ''} />
+                      <span className="flex-1 truncate">{project.name}</span>
                       <ChevronRight className="ml-1 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    </div>
-                  </SidebarMenuButton>
-                </CollapsibleTrigger>
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <ProjectActions
+                    project={project}
+                    onEdit={handleEditProject}
+                    onDelete={handleDeleteProject}
+                    isDeleting={isDeleting}
+                  />
+                </div>
                 <CollapsibleContent>
                   <SidebarMenuSub>
-                    {getMockChats(project.id, project.chatCount).map((chat) => (
+                    {getMockChats(project.id, project.chatCount || 0).map((chat) => (
                       <SidebarMenuSubItem key={chat.id}>
                         <SidebarMenuSubButton asChild>
                           <a href={chat.url} className="flex items-center gap-2">
@@ -170,15 +142,6 @@ export function NavMain() {
               </SidebarMenuItem>
             </Collapsible>
           ))}
-
-          {/* Estado vazio */}
-          {filteredProjects.length === 0 && searchQuery && (
-            <SidebarMenuItem>
-              <div className="px-2 py-4 text-center text-sm text-muted-foreground">
-                Nenhum projeto encontrado
-              </div>
-            </SidebarMenuItem>
-          )}
         </SidebarMenu>
       </SidebarGroup>
 

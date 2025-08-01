@@ -50,6 +50,13 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
     bio: ''
   })
 
+  // Estados de erro para validação
+  const [errors, setErrors] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  })
+
   const maxLength = 180
   const { handleChange: handleBioChange } = useCharacterLimit({
     maxLength,
@@ -77,6 +84,12 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
           confirmPassword: '',
           bio: '' // Adicionar campo bio na tabela se necessário
         })
+        // Limpar erros ao carregar dados
+        setErrors({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        })
       }
     } catch (error) {
       console.error('Erro ao carregar dados do usuário:', error)
@@ -85,11 +98,61 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
     }
   }
 
+  // Funções de validação
+  const validatePassword = (password: string): string => {
+    if (!password) return ''
+    
+    const minLength = password.length >= 8
+    const hasUpperCase = /[A-Z]/.test(password)
+    const hasLowerCase = /[a-z]/.test(password)
+    const hasNumber = /\d/.test(password)
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    
+    if (!minLength) return 'A senha deve ter pelo menos 8 caracteres'
+    if (!hasUpperCase) return 'A senha deve conter pelo menos uma letra maiúscula'
+    if (!hasLowerCase) return 'A senha deve conter pelo menos uma letra minúscula'
+    if (!hasNumber) return 'A senha deve conter pelo menos um número'
+    if (!hasSpecialChar) return 'A senha deve conter pelo menos um caractere especial'
+    
+    return ''
+  }
+
+  const validateConfirmPassword = (password: string, confirmPassword: string): string => {
+    if (!confirmPassword) return ''
+    if (password !== confirmPassword) return 'As senhas não coincidem'
+    return ''
+  }
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: field === 'email' ? `${value}@sensoramadesign.com.br` : value
     }))
+
+    // Validação em tempo real para campos de senha
+    if (field === 'newPassword') {
+      const passwordError = validatePassword(value)
+      setErrors(prev => ({
+        ...prev,
+        newPassword: passwordError,
+        confirmPassword: validateConfirmPassword(value, formData.confirmPassword)
+      }))
+    }
+
+    if (field === 'confirmPassword') {
+      const confirmError = validateConfirmPassword(formData.newPassword, value)
+      setErrors(prev => ({
+        ...prev,
+        confirmPassword: confirmError
+      }))
+    }
+
+    if (field === 'currentPassword') {
+      setErrors(prev => ({
+        ...prev,
+        currentPassword: ''
+      }))
+    }
   }
 
   const handleSave = async () => {
@@ -102,22 +165,37 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
       if (formData.newPassword || formData.currentPassword || formData.confirmPassword) {
         // Se qualquer campo de senha foi preenchido, todos são obrigatórios
         if (!formData.currentPassword) {
-          alert('Digite sua senha atual para alterar a senha.')
+          setErrors(prev => ({ ...prev, currentPassword: 'Digite sua senha atual para alterar a senha' }))
           return
         }
         
         if (!formData.newPassword) {
-          alert('Digite a nova senha.')
+          setErrors(prev => ({ ...prev, newPassword: 'Digite a nova senha' }))
           return
         }
         
         if (!formData.confirmPassword) {
-          alert('Confirme a nova senha.')
+          setErrors(prev => ({ ...prev, confirmPassword: 'Confirme a nova senha' }))
+          return
+        }
+
+        // Validar nova senha
+        const passwordError = validatePassword(formData.newPassword)
+        if (passwordError) {
+          setErrors(prev => ({ ...prev, newPassword: passwordError }))
           return
         }
         
-        if (formData.newPassword !== formData.confirmPassword) {
-          alert('As senhas não coincidem!')
+        // Validar confirmação de senha
+        const confirmError = validateConfirmPassword(formData.newPassword, formData.confirmPassword)
+        if (confirmError) {
+          setErrors(prev => ({ ...prev, confirmPassword: confirmError }))
+          return
+        }
+
+        // Verificar se a nova senha é diferente da atual
+        if (formData.newPassword === formData.currentPassword) {
+          setErrors(prev => ({ ...prev, newPassword: 'A nova senha deve ser diferente da senha atual' }))
           return
         }
       }
@@ -154,6 +232,18 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
       // Atualizar dados no contexto
       await refreshUserData()
       setSelectedFile(null) // Limpar arquivo selecionado
+      // Limpar campos de senha e erros
+      setFormData(prev => ({
+        ...prev,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      }))
+      setErrors({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      })
       setIsOpen(false)
     } catch (error) {
       console.error('Erro ao salvar perfil:', error)
@@ -245,7 +335,7 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
                             value={formData.currentPassword}
                             onChange={(e) => handleInputChange('currentPassword', e.target.value)}
                             type={showPassword ? "text" : "password"}
-                            className="pr-10"
+                            className={`pr-10 ${errors.currentPassword ? 'border-red-500 focus:border-red-500' : ''}`}
                           />
                           <button
                             type="button"
@@ -259,6 +349,9 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
                             )}
                           </button>
                         </div>
+                        {errors.currentPassword && (
+                          <p className="text-sm text-red-500">{errors.currentPassword}</p>
+                        )}
                       </div>
 
                       <div className="space-y-2">
@@ -268,6 +361,7 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
                           placeholder="Digite sua nova senha"
                           value={formData.newPassword}
                           onChange={(value) => handleInputChange('newPassword', value)}
+                          error={errors.newPassword}
                           showStrengthIndicator={true}
                         />
                       </div>
@@ -281,7 +375,7 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
                             value={formData.confirmPassword}
                             onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                             type={showConfirmPassword ? "text" : "password"}
-                            className="pr-10"
+                            className={`pr-10 ${errors.confirmPassword ? 'border-red-500 focus:border-red-500' : ''}`}
                           />
                           <button
                             type="button"
@@ -295,6 +389,9 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
                             )}
                           </button>
                         </div>
+                        {errors.confirmPassword && (
+                          <p className="text-sm text-red-500">{errors.confirmPassword}</p>
+                        )}
                       </div>
                     </div>
                   </form>

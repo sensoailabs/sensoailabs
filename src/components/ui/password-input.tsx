@@ -35,6 +35,7 @@ export function PasswordInput({
       { regex: /[0-9]/, text: "Pelo menos 1 número" },
       { regex: /[a-z]/, text: "Pelo menos 1 letra minúscula" },
       { regex: /[A-Z]/, text: "Pelo menos 1 letra maiúscula" },
+      { regex: /[!@#$%^&*(),.?":{}|<>]/, text: "Pelo menos 1 caractere especial" },
     ]
 
     return requirements.map((req) => ({
@@ -53,14 +54,16 @@ export function PasswordInput({
     if (score === 0) return "bg-border"
     if (score <= 1) return "bg-red-500"
     if (score <= 2) return "bg-orange-500"
-    if (score === 3) return "bg-amber-500"
+    if (score <= 3) return "bg-amber-500"
+    if (score === 4) return "bg-lime-500"
     return "bg-emerald-500"
   }
 
   const getStrengthText = (score: number) => {
     if (score === 0) return "Digite uma senha"
     if (score <= 2) return "Senha fraca"
-    if (score === 3) return "Senha média"
+    if (score <= 3) return "Senha média"
+    if (score === 4) return "Senha boa"
     return "Senha forte"
   }
 
@@ -107,12 +110,12 @@ export function PasswordInput({
             role="progressbar"
             aria-valuenow={strengthScore}
             aria-valuemin={0}
-            aria-valuemax={4}
+            aria-valuemax={5}
             aria-label="Força da senha"
           >
             <div
               className={`h-full ${getStrengthColor(strengthScore)} transition-all duration-500 ease-out`}
-              style={{ width: `${(strengthScore / 4) * 100}%` }}
+              style={{ width: `${(strengthScore / 5) * 100}%` }}
             ></div>
           </div>
 

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { authService } from '@/services/authService';
+import { supabase } from '@/lib/supabase';
 
 interface UserData {
   id: string;
@@ -34,6 +35,7 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 export function UserProvider({ children }: UserProviderProps) {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   // Função para verificar se o cache é válido
   const isCacheValid = (): boolean => {
@@ -61,19 +63,34 @@ export function UserProvider({ children }: UserProviderProps) {
   };
 
   // Função para buscar dados do usuário
-  const fetchUserData = async (): Promise<UserData | null> => {
+  const fetchUserData = async (forceRefresh: boolean = false): Promise<UserData | null> => {
     try {
-      // Primeiro, verificar se há dados em cache
-      const cachedData = getCachedData();
-      if (cachedData) {
-        setUserData(cachedData);
+      // Verificar se está autenticado primeiro
+      if (isAuthenticated === false) {
+        setUserData(null);
         setIsLoading(false);
-        return cachedData;
+        return null;
       }
 
-      // Se não há cache, buscar do servidor
+      // Se ainda não sabemos o status de autenticação, aguardar
+      if (isAuthenticated === null) {
+        return null;
+      }
+
+      // Primeiro, verificar se há dados em cache (apenas se não for refresh forçado)
+      if (!forceRefresh) {
+        const cachedData = getCachedData();
+        if (cachedData) {
+          setUserData(cachedData);
+          setIsLoading(false);
+          return cachedData;
+        }
+      }
+
+      // Se não há cache ou é refresh forçado, buscar do servidor
       const user = await authService.getUser();
       if (!user) {
+        setUserData(null);
         setIsLoading(false);
         return null;
       }
@@ -82,12 +99,15 @@ export function UserProvider({ children }: UserProviderProps) {
       if (data) {
         setUserData(data);
         setCachedData(data);
+      } else {
+        setUserData(null);
       }
       
       setIsLoading(false);
       return data;
     } catch (error) {
       console.error('Erro ao buscar dados do usuário:', error);
+      setUserData(null);
       setIsLoading(false);
       return null;
     }
@@ -99,7 +119,7 @@ export function UserProvider({ children }: UserProviderProps) {
     // Limpar cache para forçar busca nova
     localStorage.removeItem(CACHE_KEY);
     localStorage.removeItem(CACHE_EXPIRY_KEY);
-    await fetchUserData();
+    await fetchUserData(true);
   };
 
   // Função para limpar dados do usuário
@@ -109,9 +129,41 @@ export function UserProvider({ children }: UserProviderProps) {
     localStorage.removeItem(CACHE_EXPIRY_KEY);
   };
 
-  // Carregar dados iniciais
+  // Verificar autenticação inicial e escutar mudanças
   useEffect(() => {
-    fetchUserData();
+    let mounted = true;
+
+    const checkInitialAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (mounted) {
+          setIsAuthenticated(!!session);
+        }
+      } catch (error) {
+        console.error('Erro ao verificar autenticação inicial:', error);
+        if (mounted) {
+          setIsAuthenticated(false);
+        }
+      }
+    };
+
+    checkInitialAuth();
+
+    // Escutar mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (mounted) {
+        const isAuth = !!session;
+        setIsAuthenticated(isAuth);
+        
+        if (event === 'SIGNED_OUT') {
+          // Limpar dados quando fizer logout
+          setUserData(null);
+          localStorage.removeItem(CACHE_KEY);
+          localStorage.removeItem(CACHE_EXPIRY_KEY);
+          setIsLoading(false);
+        }
+      }
+    });
 
     // Listener para eventos de atualização de perfil
     const handleProfileUpdate = () => {
@@ -121,9 +173,21 @@ export function UserProvider({ children }: UserProviderProps) {
     window.addEventListener('profileUpdated', handleProfileUpdate);
 
     return () => {
+      mounted = false;
+      subscription.unsubscribe();
       window.removeEventListener('profileUpdated', handleProfileUpdate);
     };
   }, []);
+
+  // Buscar dados quando a autenticação mudar
+  useEffect(() => {
+    if (isAuthenticated === true) {
+      fetchUserData();
+    } else if (isAuthenticated === false) {
+      setUserData(null);
+      setIsLoading(false);
+    }
+  }, [isAuthenticated]);
 
   const value: UserContextType = {
     userData,

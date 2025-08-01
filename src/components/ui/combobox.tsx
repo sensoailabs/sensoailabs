@@ -19,26 +19,31 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
+// Importando os logos dos modelos
+import gptLogo from "@/assets/_icons-model-ai/gpt.svg"
+import claudeLogo from "@/assets/_icons-model-ai/claude.svg"
+import geminiLogo from "@/assets/_icons-model-ai/gemini.svg"
+
 const models = [
   {
     value: "gpt-4",
     label: "GPT-4",
-    color: "bg-purple-500"
+    logo: gptLogo
   },
   {
     value: "gpt-3.5",
     label: "GPT-3.5 Turbo",
-    color: "bg-green-500"
+    logo: gptLogo
   },
   {
     value: "claude",
     label: "Claude 3",
-    color: "bg-orange-500"
+    logo: claudeLogo
   },
   {
     value: "gemini",
     label: "Gemini Pro",
-    color: "bg-blue-500"
+    logo: geminiLogo
   },
 ]
 
@@ -64,7 +69,11 @@ export function ModelCombobox({ value, onValueChange }: ModelComboboxProps) {
         >
           <div className="flex items-center gap-1.5">
             {selectedModel && (
-              <div className={cn("w-2 h-2 rounded-full", selectedModel.color)} />
+              <img 
+                src={selectedModel.logo} 
+                alt={selectedModel.label}
+                className="w-4 h-4 object-contain"
+              />
             )}
             <span className="text-xs text-gray-600 font-medium">
               {selectedModel?.label || "Modelo"}
@@ -89,7 +98,11 @@ export function ModelCombobox({ value, onValueChange }: ModelComboboxProps) {
                   }}
                 >
                   <div className="flex items-center gap-2">
-                    <div className={cn("w-2 h-2 rounded-full", model.color)} />
+                    <img 
+                      src={model.logo} 
+                      alt={model.label}
+                      className="w-4 h-4 object-contain"
+                    />
                     {model.label}
                   </div>
                   <Check

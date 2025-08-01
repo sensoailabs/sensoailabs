@@ -57,7 +57,15 @@ export default function ChatInput() {
           <div className="flex items-center justify-between p-3 border-t border-gray-100">
             {/* Botões de ação à esquerda */}
             <div className="flex items-center gap-2">
-              {/* Upload de arquivos */}
+              {/* 1- Seletor de Modelo */}
+              <div className="border border-input rounded-lg">
+                <ModelCombobox 
+                  value={selectedModel} 
+                  onValueChange={setSelectedModel} 
+                />
+              </div>
+              
+              {/* 2- Upload de arquivos */}
               <Button
                 type="button"
                 variant="outline"
@@ -68,34 +76,7 @@ export default function ChatInput() {
                 <Paperclip className="w-4 h-4 text-gray-500" />
               </Button>
               
-              {/* Seletor de Modelo */}
-              <div className="border border-input rounded-lg">
-                <ModelCombobox 
-                  value={selectedModel} 
-                  onValueChange={setSelectedModel} 
-                />
-              </div>
-              
-              {/* Deep Research Checkbox */}
-              <label 
-                className={`relative flex h-8 px-3 cursor-pointer items-center justify-center gap-1.5 rounded-lg border text-center transition-all outline-none hover:bg-gray-50 ${
-                  deepResearch 
-                    ? 'border-primary bg-primary/10 text-primary' 
-                    : 'border-input text-gray-500 hover:border-gray-300'
-                }`}
-                title="Deep Research"
-              >
-                <Checkbox 
-                  id={`${id}-deep-research`}
-                  checked={deepResearch}
-                  onCheckedChange={setDeepResearch}
-                  className="sr-only" 
-                />
-                <Telescope className="w-4 h-4" />
-                <span className="text-xs font-medium">Investigar</span>
-              </label>
-              
-              {/* Web Search Checkbox */}
+              {/* 3- Web Search Checkbox */}
               <label 
                 className={`relative flex h-8 px-3 cursor-pointer items-center justify-center gap-1.5 rounded-lg border text-center transition-all outline-none hover:bg-gray-50 ${
                   webSearch 
@@ -112,6 +93,25 @@ export default function ChatInput() {
                 />
                 <Globe className="w-4 h-4" />
                 <span className="text-xs font-medium">Web</span>
+              </label>
+              
+              {/* 4- Deep Research Checkbox */}
+              <label 
+                className={`relative flex h-8 px-3 cursor-pointer items-center justify-center gap-1.5 rounded-lg border text-center transition-all outline-none hover:bg-gray-50 ${
+                  deepResearch 
+                    ? 'border-primary bg-primary/10 text-primary' 
+                    : 'border-input text-gray-500 hover:border-gray-300'
+                }`}
+                title="Deep Research"
+              >
+                <Checkbox 
+                  id={`${id}-deep-research`}
+                  checked={deepResearch}
+                  onCheckedChange={setDeepResearch}
+                  className="sr-only" 
+                />
+                <Telescope className="w-4 h-4" />
+                <span className="text-xs font-medium">Investigar</span>
               </label>
             </div>
 

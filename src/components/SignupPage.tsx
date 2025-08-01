@@ -10,7 +10,7 @@ import { Notification, useNotification } from './ui/notification';
 import { registerUser, getErrorMessage, getFieldErrors, type RegisterRequest } from '../services/authService';
 import { cn } from '@/lib/utils';
 import logoSensoAI from '../assets/logo_sensoai.svg';
-import coverRegister from '../assets/cover-register.png';
+import coverRegister from '../assets/_banners/cover-register.png';
 import backgroundImage from '../assets/background.png';
 
 interface FormData {

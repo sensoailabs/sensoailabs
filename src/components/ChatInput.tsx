@@ -1,29 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ModelCombobox } from "@/components/ui/combobox";
 import { 
   Paperclip, 
-  Search, 
+  Telescope, 
   Globe, 
-  Send,
-  Sparkles
+  Send
 } from 'lucide-react';
 
 export default function ChatInput() {
   const [message, setMessage] = useState('');
   const [selectedModel, setSelectedModel] = useState('gpt-4');
+  const [deepResearch, setDeepResearch] = useState(false);
+  const [webSearch, setWebSearch] = useState(false);
+  const id = useId();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
       console.log('Enviando mensagem:', message);
+      console.log('Deep Research:', deepResearch);
+      console.log('Web Search:', webSearch);
       // Aqui será implementada a lógica de envio
       setMessage('');
     }
@@ -37,45 +36,7 @@ export default function ChatInput() {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      {/* Seletor de Modelo */}
-      <div className="mb-4">
-        <Select value={selectedModel} onValueChange={setSelectedModel}>
-          <SelectTrigger className="w-64 bg-white border border-gray-200 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-purple-500" />
-              <SelectValue placeholder="Selecione o modelo" />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="gpt-4">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                GPT-4
-              </div>
-            </SelectItem>
-            <SelectItem value="gpt-3.5">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                GPT-3.5 Turbo
-              </div>
-            </SelectItem>
-            <SelectItem value="claude">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                Claude 3
-              </div>
-            </SelectItem>
-            <SelectItem value="gemini">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                Gemini Pro
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
+    <div className="w-[680px] mx-auto">
       {/* Container do Input */}
       <div className="relative bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200">
         <form onSubmit={handleSubmit} className="flex flex-col">
@@ -84,7 +45,7 @@ export default function ChatInput() {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask me anything..."
+            placeholder="Pergunte-me qualquer coisa..."
             className="min-h-[120px] max-h-[300px] resize-none border-0 bg-transparent p-4 text-base placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
             style={{ 
               fontSize: '16px',
@@ -99,35 +60,59 @@ export default function ChatInput() {
               {/* Upload de arquivos */}
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="h-8 w-8 p-0 hover:bg-gray-100 rounded-lg"
+                className="h-8 w-8 p-0 border-input hover:bg-gray-50"
                 title="Anexar arquivo"
               >
                 <Paperclip className="w-4 h-4 text-gray-500" />
               </Button>
               
-              {/* Deep Research */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 hover:bg-gray-100 rounded-lg"
+              {/* Seletor de Modelo */}
+              <div className="border border-input rounded-lg">
+                <ModelCombobox 
+                  value={selectedModel} 
+                  onValueChange={setSelectedModel} 
+                />
+              </div>
+              
+              {/* Deep Research Checkbox */}
+              <label 
+                className={`relative flex h-8 px-3 cursor-pointer items-center justify-center gap-1.5 rounded-lg border text-center transition-all outline-none hover:bg-gray-50 ${
+                  deepResearch 
+                    ? 'border-primary bg-primary/10 text-primary' 
+                    : 'border-input text-gray-500 hover:border-gray-300'
+                }`}
                 title="Deep Research"
               >
-                <Search className="w-4 h-4 text-gray-500" />
-              </Button>
+                <Checkbox 
+                  id={`${id}-deep-research`}
+                  checked={deepResearch}
+                  onCheckedChange={setDeepResearch}
+                  className="sr-only" 
+                />
+                <Telescope className="w-4 h-4" />
+                <span className="text-xs font-medium">Investigar</span>
+              </label>
               
-              {/* Pesquisa na Web */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 hover:bg-gray-100 rounded-lg"
+              {/* Web Search Checkbox */}
+              <label 
+                className={`relative flex h-8 px-3 cursor-pointer items-center justify-center gap-1.5 rounded-lg border text-center transition-all outline-none hover:bg-gray-50 ${
+                  webSearch 
+                    ? 'border-primary bg-primary/10 text-primary' 
+                    : 'border-input text-gray-500 hover:border-gray-300'
+                }`}
                 title="Pesquisar na web"
               >
-                <Globe className="w-4 h-4 text-gray-500" />
-              </Button>
+                <Checkbox 
+                  id={`${id}-web-search`}
+                  checked={webSearch}
+                  onCheckedChange={setWebSearch}
+                  className="sr-only" 
+                />
+                <Globe className="w-4 h-4" />
+                <span className="text-xs font-medium">Web</span>
+              </label>
             </div>
 
             {/* Botão de envio à direita */}

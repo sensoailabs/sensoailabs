@@ -3,9 +3,9 @@ import Header from '../components/Header';
 import { CardAplicativos } from '../components/CardAplicativos';
 import ChatInput from '../components/ChatInput';
 import backgroundImage from '../assets/background.png';
-import iconAppAnonimizador from '../assets/icon-app-anonimizador.png';
-import iconAppSensoChat from '../assets/icon-app-senso-chat.png';
-import iconAppRecrutamento from '../assets/icon-app-recrutamento.png';
+import iconAppAnonimizador from '../assets/_icons-modulos/icon-app-anonimizador.png';
+import iconAppSensoChat from '../assets/_icons-modulos/icon-app-senso-chat.png';
+import iconAppRecrutamento from '../assets/_icons-modulos/icon-app-recrutamento.png';
 import { useUser } from '../contexts/UserContext';
 import { Grid3X3, MessageSquare, Eye, CheckCircle, UserCheck } from 'lucide-react';
 import {
@@ -32,23 +32,24 @@ export default function HomePage() {
   const firstName = userName.split(' ')[0];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Background com imagem - cobrindo toda a tela */}
+      <div 
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-40 z-0"
+        style={{backgroundImage: `url(${backgroundImage})`}}
+      >
+        {/* Overlay com efeito vidro */}
+        <div className="absolute inset-0 bg-[#D9D9D9]/15 backdrop-blur-[12px]"></div>
+      </div>
+
       {/* Header */}
       <Header />
       
       {/* Main Content */}
-      <main className="relative flex min-h-[calc(100vh-4rem)] w-full p-6 md:p-10 overflow-hidden">
-        {/* Background com imagem */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
-          style={{backgroundImage: `url(${backgroundImage})`}}
-        >
-          {/* Overlay com efeito vidro */}
-          <div className="absolute inset-0 bg-[#D9D9D9]/15 backdrop-blur-[12px]"></div>
-        </div>
+      <main className="relative flex min-h-[calc(100vh-4rem)] w-full p-6 md:p-10 overflow-hidden z-10 pt-20">
 
         {/* Seção de Saudação */}
-        <div className="relative z-10 flex flex-col items-center space-y-3 w-full" style={{marginTop: '40px'}}>
+        <div className="relative z-10 flex flex-col items-center space-y-3 w-full" style={{marginTop: '80px'}}>
           {/* Foto do usuário */}
           <div className="w-24 h-24 rounded-full overflow-hidden bg-primary flex items-center justify-center text-primary-foreground text-2xl font-semibold">
             {userPhoto ? (
@@ -70,7 +71,7 @@ export default function HomePage() {
           </div>
 
           {/* Componente de Tabs */}
-          <div className="w-full max-w-4xl" style={{marginTop: '48px'}}>
+          <div className="w-full" style={{marginTop: '48px'}}>
             <Tabs defaultValue="meus-aplicativos" className="items-center">
               <TabsList className="bg-white rounded-full p-1 shadow-sm">
                 <TabsTrigger 
@@ -129,7 +130,7 @@ export default function HomePage() {
                 </div>
               </TabsContent>
               <TabsContent value="novo-chat">
-                <div className="w-full flex justify-center mt-8">
+                <div className="w-full mt-8">
                   <ChatInput />
                 </div>
               </TabsContent>

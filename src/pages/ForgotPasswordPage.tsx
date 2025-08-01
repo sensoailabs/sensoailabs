@@ -8,7 +8,7 @@ import { EmailInput } from '@/components/ui/email-input';
 import { Notification, useNotification } from '@/components/ui/notification';
 import { cn } from '@/lib/utils';
 import logoSensoAI from '@/assets/logo_sensoai.svg';
-import coverRecovery from '@/assets/cover-recovery.png';
+import coverRecovery from '@/assets/_banners/cover-recovery.png';
 import backgroundImage from '@/assets/background.png';
 
 interface ForgotPasswordPageProps {

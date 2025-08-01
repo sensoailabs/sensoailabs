@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Notification, useNotification } from '@/components/ui/notification';
 import { cn } from '@/lib/utils';
 import logoSensoAI from '../assets/logo_sensoai.svg';
-import coverLogin from '../assets/cover-login.png';
+import coverLogin from '../assets/_banners/cover-login.png';
 import backgroundImage from '../assets/background.png';
 import { Eye, EyeOff } from 'lucide-react';
 

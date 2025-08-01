@@ -7,6 +7,7 @@ import LoginPage from './components/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import HomePage from './pages/HomePage';
+import SensoChatPage from './pages/SensoChatPage';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -45,6 +46,10 @@ function App() {
           <Route 
             path="/home" 
             element={isAuthenticated ? <HomePage /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/chat" 
+            element={isAuthenticated ? <SensoChatPage /> : <Navigate to="/login" />} 
           />
           
           {/* Rotas públicas - só acessíveis se não autenticado */}

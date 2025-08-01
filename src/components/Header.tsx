@@ -4,6 +4,7 @@ import {
   MessageSquare,
   ArrowRightIcon,
 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
 import Logo from "@/components/Logo"
 import UserMenu from "@/components/UserMenu"
@@ -17,6 +18,12 @@ import {
 } from "@/components/ui/tooltip"
 
 export default function Header() {
+  const navigate = useNavigate();
+
+  const handleChatClick = () => {
+    navigate('/chat');
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-gray-200/30 bg-white/70 backdrop-blur-md backdrop-saturate-150 px-4 md:px-6 shadow-sm supports-[backdrop-filter]:bg-white/60">
       <div className="flex h-16 items-center justify-between gap-4">
@@ -44,7 +51,12 @@ export default function Header() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={handleChatClick}
+                  >
                     <MessageSquare size={16} />
                     <span className="sr-only">Chat com IA</span>
                   </Button>

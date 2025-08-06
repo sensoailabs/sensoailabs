@@ -45,16 +45,16 @@ export default function UserMenu() {
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          className="h-8 w-8 rounded-xl p-0 overflow-hidden"
+          className="h-8 w-8 rounded-full p-0 overflow-hidden"
         >
           {userPhoto ? (
             <img
               src={userPhoto}
               alt="Foto do usuário"
-              className="h-8 w-8 rounded-xl object-cover"
+              className="h-8 w-8 rounded-full object-cover"
             />
           ) : (
-            <div className="h-8 w-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
+            <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
               {getInitials(userName)}
             </div>
           )}

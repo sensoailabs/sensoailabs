@@ -20,6 +20,10 @@ import {
 export default function Header() {
   const navigate = useNavigate();
 
+  const handleHomeClick = () => {
+    navigate('/home');
+  };
+
   const handleChatClick = () => {
     navigate('/chat');
   };
@@ -30,21 +34,29 @@ export default function Header() {
         {/* Left side - Logo and Navigation Icons */}
         <div className="flex items-center gap-4">
           {/* Logo */}
-          <a href="#" className="text-primary hover:text-primary/90">
+          <button 
+            onClick={handleHomeClick}
+            className="text-primary hover:text-primary/90 transition-colors cursor-pointer"
+          >
             <Logo />
-          </a>
+          </button>
           {/* Navigation Icons - Para implementação futura */}
           <div className="hidden md:flex items-center gap-2">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={handleHomeClick}
+                  >
                     <HomeIcon size={16} />
-                    <span className="sr-only">Dashboard</span>
+                    <span className="sr-only">Página Inicial</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="px-2 py-1 text-xs">
-                  <p>Dashboard</p>
+                  <p>Página Inicial</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

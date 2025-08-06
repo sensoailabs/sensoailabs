@@ -1,10 +1,13 @@
 "use client"
 
-import { useId, useState, useEffect } from "react"
-import { CheckIcon, ImagePlusIcon, XIcon, EyeIcon, EyeOffIcon } from "lucide-react"
+import { useId, useState, useEffect, useCallback, useMemo } from "react"
+import { CheckIcon, ImagePlusIcon, XIcon, EyeIcon, EyeOffIcon, Loader2 } from "lucide-react"
 
 import { useCharacterLimit } from "@/hooks/use-character-limit"
 import { useFileUpload } from "@/hooks/use-file-upload"
+import { useForm } from "@/hooks/useForm"
+import { useGlobalNotification } from "@/contexts/NotificationContext"
+import { validatePassword as validatePasswordUtil, validatePasswordConfirmation } from "@/utils/validation"
 import { profileService } from "@/services/profileService"
 import type { UserProfile } from "@/services/profileService"
 import { EmailInput } from "@/components/ui/email-input"
@@ -25,6 +28,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { AvatarSkeleton, ProfileFormSkeleton, PasswordFormSkeleton } from "@/components/ui/profile-skeleton"
 
 interface EditProfileDialogProps {
   children: React.ReactNode
@@ -33,6 +37,7 @@ interface EditProfileDialogProps {
 export default function EditProfileDialog({ children }: EditProfileDialogProps) {
   const id = useId()
   const { refreshUserData } = useUser()
+  const { showNotification } = useGlobalNotification()
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -56,6 +61,42 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
     newPassword: '',
     confirmPassword: ''
   })
+
+  // Função para validar campos em tempo real
+  const validateFieldInput = useCallback((field: string, value: string) => {
+    let error = ''
+    
+    switch (field) {
+      case 'newPassword':
+        if (value) {
+          const validation = validatePasswordUtil(value)
+          error = validation.isValid ? '' : validation.errors[0] || 'Senha inválida'
+        }
+        break
+      case 'confirmPassword':
+        error = validatePasswordConfirmation(formData.newPassword, value)
+        break
+      case 'currentPassword':
+        // Se está tentando alterar senha, senha atual é obrigatória
+        if ((formData.newPassword || formData.confirmPassword) && !value) {
+          error = 'Digite sua senha atual para alterar a senha'
+        }
+        break
+    }
+    
+    setErrors(prev => ({ ...prev, [field]: error }))
+    return error === ''
+  }, [formData.newPassword, formData.confirmPassword])
+
+  // Função para atualizar dados do formulário
+  const handleInputChangeForm = useCallback((field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    
+    // Limpar erro do campo quando o usuário começar a digitar
+    if (errors[field as keyof typeof errors]) {
+      setErrors(prev => ({ ...prev, [field]: '' }))
+    }
+  }, [errors])
 
   const maxLength = 180
   const { handleChange: handleBioChange } = useCharacterLimit({
@@ -93,125 +134,120 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
       }
     } catch (error) {
       console.error('Erro ao carregar dados do usuário:', error)
+      showNotification({
+        type: 'error',
+        title: 'Erro ao carregar dados',
+        message: 'Não foi possível carregar seus dados. Tente novamente.'
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  // Funções de validação
-  const validatePassword = (password: string): string => {
-    if (!password) return ''
-    
-    const minLength = password.length >= 8
-    const hasUpperCase = /[A-Z]/.test(password)
-    const hasLowerCase = /[a-z]/.test(password)
-    const hasNumber = /\d/.test(password)
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password)
-    
-    if (!minLength) return 'A senha deve ter pelo menos 8 caracteres'
-    if (!hasUpperCase) return 'A senha deve conter pelo menos uma letra maiúscula'
-    if (!hasLowerCase) return 'A senha deve conter pelo menos uma letra minúscula'
-    if (!hasNumber) return 'A senha deve conter pelo menos um número'
-    if (!hasSpecialChar) return 'A senha deve conter pelo menos um caractere especial'
-    
-    return ''
-  }
 
-  const validateConfirmPassword = (password: string, confirmPassword: string): string => {
-    if (!confirmPassword) return ''
-    if (password !== confirmPassword) return 'As senhas não coincidem'
-    return ''
-  }
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: field === 'email' ? `${value}@sensoramadesign.com.br` : value
-    }))
-
-    // Validação em tempo real para campos de senha
-    if (field === 'newPassword') {
-      const passwordError = validatePassword(value)
-      setErrors(prev => ({
-        ...prev,
-        newPassword: passwordError,
-        confirmPassword: validateConfirmPassword(value, formData.confirmPassword)
-      }))
-    }
-
-    if (field === 'confirmPassword') {
-      const confirmError = validateConfirmPassword(formData.newPassword, value)
-      setErrors(prev => ({
-        ...prev,
-        confirmPassword: confirmError
-      }))
-    }
-
-    if (field === 'currentPassword') {
-      setErrors(prev => ({
-        ...prev,
-        currentPassword: ''
-      }))
-    }
-  }
-
-  const handleSave = async () => {
+  // Função otimizada para salvar perfil
+  const handleSave = useCallback(async () => {
     if (!user) return
 
     try {
       setLoading(true)
 
-      // Validações para alteração de senha
+      // Validações para alteração de senha usando utilitários centralizados
       if (formData.newPassword || formData.currentPassword || formData.confirmPassword) {
         // Se qualquer campo de senha foi preenchido, todos são obrigatórios
         if (!formData.currentPassword) {
           setErrors(prev => ({ ...prev, currentPassword: 'Digite sua senha atual para alterar a senha' }))
+          showNotification({
+            type: 'error',
+            title: 'Senha atual obrigatória',
+            message: 'Para alterar sua senha, você precisa informar a senha atual.'
+          })
           return
         }
         
         if (!formData.newPassword) {
           setErrors(prev => ({ ...prev, newPassword: 'Digite a nova senha' }))
+          showNotification({
+            type: 'error',
+            title: 'Nova senha obrigatória',
+            message: 'Digite uma nova senha para continuar.'
+          })
           return
         }
         
         if (!formData.confirmPassword) {
           setErrors(prev => ({ ...prev, confirmPassword: 'Confirme a nova senha' }))
+          showNotification({
+            type: 'error',
+            title: 'Confirmação obrigatória',
+            message: 'Confirme sua nova senha para continuar.'
+          })
           return
         }
 
-        // Validar nova senha
-        const passwordError = validatePassword(formData.newPassword)
-        if (passwordError) {
-          setErrors(prev => ({ ...prev, newPassword: passwordError }))
+        // Validar nova senha usando utilitário centralizado
+        const passwordValidation = validatePasswordUtil(formData.newPassword)
+        if (!passwordValidation.isValid) {
+          setErrors(prev => ({ ...prev, newPassword: passwordValidation.errors[0] || 'Senha inválida' }))
+          showNotification({
+            type: 'error',
+            title: 'Senha inválida',
+            message: passwordValidation.errors[0] || 'A nova senha não atende aos critérios de segurança.'
+          })
           return
         }
         
         // Validar confirmação de senha
-        const confirmError = validateConfirmPassword(formData.newPassword, formData.confirmPassword)
+        const confirmError = validatePasswordConfirmation(formData.newPassword, formData.confirmPassword)
         if (confirmError) {
           setErrors(prev => ({ ...prev, confirmPassword: confirmError }))
+          showNotification({
+            type: 'error',
+            title: 'Senhas não coincidem',
+            message: 'A confirmação da senha não confere com a nova senha.'
+          })
           return
         }
 
         // Verificar se a nova senha é diferente da atual
         if (formData.newPassword === formData.currentPassword) {
           setErrors(prev => ({ ...prev, newPassword: 'A nova senha deve ser diferente da senha atual' }))
+          showNotification({
+            type: 'error',
+            title: 'Senha igual à atual',
+            message: 'A nova senha deve ser diferente da sua senha atual.'
+          })
           return
         }
       }
 
+      // Controlar quais atualizações foram feitas
+      let updatedItems: string[] = []
+
       // Atualizar dados básicos do perfil
       const profileUpdates: any = {}
-      if (formData.name !== user.name) profileUpdates.name = formData.name
-      if (formData.email !== user.email) profileUpdates.email = formData.email
+      if (formData.name !== user.name) {
+        profileUpdates.name = formData.name
+        updatedItems.push('nome')
+      }
+      if (formData.email !== user.email) {
+        profileUpdates.email = formData.email
+        updatedItems.push('email')
+      }
 
       // Se há uma nova foto selecionada, fazer upload primeiro
       if (selectedFile) {
         const photoUrl = await profileService.uploadAvatar(selectedFile, user.id)
         if (photoUrl) {
           profileUpdates.photo_url = photoUrl
+          updatedItems.push('foto do perfil')
         } else {
-          alert('Erro ao fazer upload da foto. Tente novamente.')
+          showNotification({
+            type: 'error',
+            title: 'Erro no upload',
+            message: 'Erro ao fazer upload da foto. Tente novamente.'
+          })
           return
         }
       }
@@ -226,9 +262,27 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
           currentPassword: formData.currentPassword,
           newPassword: formData.newPassword
         })
+        updatedItems.push('senha')
       }
 
-      alert('Perfil atualizado com sucesso!')
+      // Mostrar notificação específica baseada no que foi atualizado
+      if (updatedItems.length > 0) {
+        const itemsText = updatedItems.length === 1 
+          ? updatedItems[0] 
+          : updatedItems.slice(0, -1).join(', ') + ' e ' + updatedItems[updatedItems.length - 1]
+        
+        showNotification({
+          type: 'success',
+          title: 'Perfil atualizado!',
+          message: `Seu ${itemsText} foi atualizado com sucesso.`
+        })
+      } else {
+        showNotification({
+          type: 'success',
+          title: 'Tudo certo!',
+          message: 'Nenhuma alteração foi detectada.'
+        })
+      }
       // Atualizar dados no contexto
       await refreshUserData()
       setSelectedFile(null) // Limpar arquivo selecionado
@@ -247,11 +301,15 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
       setIsOpen(false)
     } catch (error) {
       console.error('Erro ao salvar perfil:', error)
-      alert('Erro ao atualizar perfil. Tente novamente.')
+      showNotification({
+        type: 'error',
+        title: 'Erro',
+        message: 'Erro ao atualizar perfil. Tente novamente.'
+      })
     } finally {
       setLoading(false)
     }
-  }
+  }, [user, formData, selectedFile, refreshUserData, showNotification])
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -278,51 +336,55 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
               </div>
               
               <TabsContent value="profile" className="space-y-4 animate-in fade-in-50 duration-300">
-                <div className="flex justify-center">
-                  <Avatar 
-                    user={user} 
-                    onFileSelect={setSelectedFile}
-                    selectedFile={selectedFile}
-                  />
-                </div>
-                
                 {loading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="text-sm text-muted-foreground">Carregando...</div>
-                  </div>
+                  <>
+                    <div className="flex justify-center">
+                      <AvatarSkeleton />
+                    </div>
+                    <ProfileFormSkeleton />
+                  </>
                 ) : (
-                  <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-                    <div className="space-y-2">
-                      <Label htmlFor={`${id}-name`}>Nome e sobrenome</Label>
-                      <Input
-                        id={`${id}-name`}
-                        placeholder="Seu nome e sobrenome"
-                        value={formData.name}
-                        onChange={(e) => handleInputChange('name', e.target.value)}
-                        type="text"
-                        required
-                      />
-                    </div>
+                  <>
+                    <div className="flex justify-center">
+                       <Avatar 
+                         user={user} 
+                         onFileSelect={setSelectedFile}
+                         selectedFile={selectedFile}
+                         loading={loading}
+                       />
+                     </div>
                     
-                    <div className="space-y-2 pb-4">
-                      <Label htmlFor={`${id}-email`}>Email</Label>
-                      <EmailInput
-                        id={`${id}-email`}
-                        placeholder="usuario"
-                        value={formData.email.replace('@sensoramadesign.com.br', '')}
-                        onChange={(value) => handleInputChange('email', value)}
-                        disabled
-                      />
-                    </div>
-                  </form>
+                    <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                      <div className="space-y-2">
+                        <Label htmlFor={`${id}-name`}>Nome e sobrenome</Label>
+                        <Input
+                          id={`${id}-name`}
+                          placeholder="Seu nome e sobrenome"
+                          value={formData.name}
+                          onChange={(e) => handleInputChangeForm('name', e.target.value)}
+                          type="text"
+                          required
+                        />
+                      </div>
+                      
+                      <div className="space-y-2 pb-4">
+                        <Label htmlFor={`${id}-email`}>Email</Label>
+                        <EmailInput
+                          id={`${id}-email`}
+                          placeholder="usuario"
+                          value={formData.email.replace('@sensoramadesign.com.br', '')}
+                          onChange={(value) => handleInputChangeForm('email', value)}
+                          disabled
+                        />
+                      </div>
+                    </form>
+                  </>
                 )}
               </TabsContent>
               
               <TabsContent value="password" className="space-y-4 animate-in fade-in-50 duration-300">
                 {loading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="text-sm text-muted-foreground">Carregando...</div>
-                  </div>
+                  <PasswordFormSkeleton />
                 ) : (
                   <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
                     <div className="space-y-3 pb-4">
@@ -333,7 +395,10 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
                             id={`${id}-current-password`}
                             placeholder="Digite sua senha atual"
                             value={formData.currentPassword}
-                            onChange={(e) => handleInputChange('currentPassword', e.target.value)}
+                            onChange={(e) => {
+                              handleInputChangeForm('currentPassword', e.target.value)
+                              validateFieldInput('currentPassword', e.target.value)
+                            }}
                             type={showPassword ? "text" : "password"}
                             className={`pr-10 ${errors.currentPassword ? 'border-red-500 focus:border-red-500' : ''}`}
                           />
@@ -360,7 +425,10 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
                           label="Nova senha"
                           placeholder="Digite sua nova senha"
                           value={formData.newPassword}
-                          onChange={(value) => handleInputChange('newPassword', value)}
+                          onChange={(value) => {
+                            handleInputChangeForm('newPassword', value)
+                            validateFieldInput('newPassword', value)
+                          }}
                           error={errors.newPassword}
                           showStrengthIndicator={true}
                         />
@@ -373,7 +441,10 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
                             id={`${id}-confirm-password`}
                             placeholder="Confirme sua nova senha"
                             value={formData.confirmPassword}
-                            onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                            onChange={(e) => {
+                              handleInputChangeForm('confirmPassword', e.target.value)
+                              validateFieldInput('confirmPassword', e.target.value)
+                            }}
                             type={showConfirmPassword ? "text" : "password"}
                             className={`pr-10 ${errors.confirmPassword ? 'border-red-500 focus:border-red-500' : ''}`}
                           />
@@ -407,18 +478,28 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
             </Button>
           </DialogClose>
           <Button type="button" onClick={handleSave} disabled={loading} className="rounded-full">
-            {loading ? 'Salvando...' : 'Salvar alterações'}
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              'Salvar alterações'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
+      
+
     </Dialog>
   )
 }
 
-function Avatar({ user, onFileSelect, selectedFile }: { 
+function Avatar({ user, onFileSelect, selectedFile, loading }: { 
   user: UserProfile | null
   onFileSelect: (file: File | null) => void
   selectedFile: File | null
+  loading?: boolean
 }) {
   const [{ files }, { openFileDialog, getInputProps }] = useFileUpload({
     accept: "image/*",

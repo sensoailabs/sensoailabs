@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { supabase } from './lib/supabase';
 import { UserProvider } from './contexts/UserContext';
 import { ToastProvider } from './components/providers/toast-provider';
+import { NotificationProvider } from './contexts/NotificationContext';
+import GlobalNotification from './components/GlobalNotification';
 import SignupPage from './components/SignupPage';
 import LoginPage from './components/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -41,8 +43,10 @@ function App() {
 
   return (
     <Router>
-      <UserProvider>
-        <ToastProvider>
+      <NotificationProvider>
+        <UserProvider>
+          <ToastProvider>
+            <GlobalNotification />
           <Routes>
           {/* Rotas protegidas - só acessíveis se autenticado */}
           <Route 
@@ -84,8 +88,9 @@ function App() {
             element={<Navigate to={isAuthenticated ? "/home" : "/login"} />} 
           />
           </Routes>
-        </ToastProvider>
-      </UserProvider>
+          </ToastProvider>
+        </UserProvider>
+      </NotificationProvider>
     </Router>
   );
 }

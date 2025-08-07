@@ -1,16 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { UserProvider } from './contexts/UserContext';
 import { ToastProvider } from './components/providers/toast-provider';
 import { NotificationProvider } from './contexts/NotificationContext';
 import GlobalNotification from './components/GlobalNotification';
-import SignupPage from './components/SignupPage';
-import LoginPage from './components/LoginPage';
+import SignupPage from './pages/SignupPage';
+import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import HomePage from './pages/HomePage';
 import SensoChatPage from './pages/SensoChatPage';
+import AnonimizadorPage from './pages/AnonimizadorPage';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -25,7 +26,7 @@ function App() {
     checkAuth();
 
     // Escutar mudanças de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
     });
 
@@ -56,6 +57,10 @@ function App() {
           <Route 
             path="/chat" 
             element={isAuthenticated ? <SensoChatPage /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/anonimizador" 
+            element={isAuthenticated ? <AnonimizadorPage /> : <Navigate to="/login" />} 
           />
           
           {/* Rotas públicas - só acessíveis se não autenticado */}

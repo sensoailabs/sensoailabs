@@ -1,4 +1,3 @@
-import React from 'react';
 import { useGlobalNotification } from '@/contexts/NotificationContext';
 import { Notification } from '@/components/ui/notification';
 

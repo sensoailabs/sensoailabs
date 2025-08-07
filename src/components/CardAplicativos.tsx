@@ -61,15 +61,15 @@ export function CardAplicativos({
         {/* Tags */}
         <div className="flex gap-1 overflow-x-auto whitespace-nowrap pb-0 hide-scrollbar" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
           {tags.map((tag, index) => (
-            <span 
-              key={index}
-              className="px-3 py-1 text-[10px] font-semibold rounded-[6px] flex-shrink-0 bg-gray-100 text-gray-600"
-            >
-              {tag.label}
-            </span>
+          <span 
+            key={index}
+            className="px-3 py-1 text-[11px] font-semibold rounded-[6px] flex-shrink-0 bg-gray-100 text-gray-600"
+          >
+            {tag.label}
+          </span>
           ))}
           {tagsExtras > 0 && (
-            <span className="px-3 py-1 bg-gray-100 text-gray-600 text-[10px] font-semibold rounded-[6px] flex-shrink-0">
+            <span className="px-3 py-1 bg-gray-100 text-gray-600 text-[11px] font-semibold rounded-[6px] flex-shrink-0">
               +{tagsExtras}
             </span>
           )}

@@ -112,13 +112,13 @@ export function SidebarChat({
 }: SidebarChatProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader />
+      <SidebarHeader className="animate-smooth-fade-up" style={{ animationDelay: '80ms', willChange: 'transform, opacity' }} />
       
-      <SidebarContent>
+      <SidebarContent className="animate-smooth-fade-up" style={{ animationDelay: '120ms', willChange: 'transform, opacity' }}>
         {/* Ações do Chat */}
-        <SidebarGroup>
+        <SidebarGroup className="animate-smooth-fade-up" style={{ animationDelay: '160ms' }}>
           <SidebarMenu>
-            <SidebarMenuItem>
+            <SidebarMenuItem className="animate-smooth-fade-up" style={{ animationDelay: '200ms' }}>
               <SidebarMenuButton asChild>
                 <a href="#" className="font-medium text-primary hover:text-primary/80">
                   <MessageCircle className="text-primary" />
@@ -126,7 +126,7 @@ export function SidebarChat({
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
+            <SidebarMenuItem className="animate-smooth-fade-up" style={{ animationDelay: '240ms' }}>
               <SidebarMenuButton asChild>
                 <a href="#" className="font-medium">
                   <Search />
@@ -138,7 +138,7 @@ export function SidebarChat({
         </SidebarGroup>
 
         {/* Meus Projetos */}
-        <SidebarGroup>
+        <SidebarGroup className="animate-smooth-fade-up" style={{ animationDelay: '200ms' }}>
           <SidebarGroupLabel>Meus projetos</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
@@ -149,12 +149,13 @@ export function SidebarChat({
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            {projects.map((project) => (
+            {projects.map((project, idx) => (
               <Collapsible
                 key={project.title}
                 asChild
                 defaultOpen={project.isActive}
-                className="group/collapsible"
+                className="group/collapsible animate-smooth-fade-up"
+                style={{ animationDelay: `${240 + idx * 100}ms`, willChange: 'transform, opacity' }}
               >
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
@@ -184,12 +185,12 @@ export function SidebarChat({
         </SidebarGroup>
 
         {/* Meus Chats */}
-        <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+          <SidebarGroup className="group-data-[collapsible=icon]:hidden animate-smooth-fade-up" style={{ animationDelay: '240ms' }}>
           <SidebarGroupLabel>Meus chats</SidebarGroupLabel>
           <SidebarMenu>
-            {chats.map((chat) => (
-              <SidebarMenuItem key={chat.name}>
-                <SidebarMenuButton asChild>
+              {chats.map((chat, idx) => (
+                <SidebarMenuItem key={chat.name} className="animate-smooth-fade-up" style={{ animationDelay: `${260 + idx * 80}ms` }}>
+                  <SidebarMenuButton asChild>
                   <a href={chat.url}>
                     
                     <span>{chat.name}</span>
@@ -201,7 +202,7 @@ export function SidebarChat({
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarRail />
+      <SidebarRail className="animate-smooth-fade-up" style={{ animationDelay: '100ms' }} />
     </Sidebar>
   )
 }

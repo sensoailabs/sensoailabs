@@ -105,3 +105,32 @@ export const validateField = (fieldName: string, value: string, confirmValue?: s
       return '';
   }
 };
+
+// Auxiliares específicos para e-mail corporativo Sensorama
+export const CORPORATE_DOMAIN = '@sensoramadesign.com.br';
+
+// Retorna mensagem de erro ou undefined se válido (mantém padrão das páginas)
+export const validateCorporateEmailFormat = (emailOrLocal: string): string | undefined => {
+  if (!emailOrLocal) return 'E-mail é obrigatório';
+
+  // Se contém @, validar domínio e formato completo
+  if (emailOrLocal.includes('@')) {
+    if (!emailOrLocal.endsWith(CORPORATE_DOMAIN)) {
+      return `E-mail deve ser do domínio ${CORPORATE_DOMAIN}`;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailOrLocal)) return 'Formato de e-mail inválido';
+  } else {
+    // Apenas parte local
+    if (emailOrLocal.length < 3) return 'E-mail deve ter pelo menos 3 caracteres';
+  }
+
+  return undefined;
+};
+
+// Completa o e-mail com o domínio corporativo caso venha só a parte local
+export const completeCorporateEmail = (emailOrLocal: string): string => {
+  return emailOrLocal.includes('@')
+    ? emailOrLocal
+    : `${emailOrLocal}${CORPORATE_DOMAIN}`;
+};

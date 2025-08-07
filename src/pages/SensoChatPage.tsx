@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Header from '@/components/Header';
 import ChatInput from '@/components/ChatInput';
 import LogoAnimated from '@/components/LogoAnimated';
@@ -28,7 +28,7 @@ interface Message {
 }
 
 export default function SensoChatPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages] = useState<Message[]>([]);
 
   const formatTime = (date: Date) => {
     return new Intl.DateTimeFormat('pt-BR', {
@@ -59,7 +59,10 @@ export default function SensoChatPage() {
         <SidebarProvider className="h-full">
           <SidebarChat className="h-full" />
           <SidebarInset className="h-full">
-            <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+            <header
+              className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 animate-smooth-fade-up"
+              style={{ animationDelay: '80ms', willChange: 'transform, opacity' }}
+            >
               <div className="flex items-center gap-2 px-4">
                 <SidebarTrigger className="-ml-1" />
                 <Separator orientation="vertical" className="mr-2 h-4" />
@@ -80,25 +83,35 @@ export default function SensoChatPage() {
             </header>
                      
 
-          <div className="bg-white rounded-2xl mb-6">
+          <div
+            className="bg-white rounded-2xl mb-6 animate-smooth-fade-up"
+            style={{ animationDelay: '160ms', willChange: 'transform, opacity' }}
+          >
             {messages.length === 0 ? (
-              <div className="p-12 text-center">
-                <div className="mx-auto mb-4 flex justify-center">
+              <div
+                className="p-12 text-center animate-smooth-fade-up"
+                style={{ animationDelay: '220ms', willChange: 'transform, opacity' }}
+              >
+                <div className="mx-auto mb-4 flex justify-center animate-smooth-fade-up" style={{ animationDelay: '260ms' }}>
                   <LogoAnimated />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2 animate-smooth-fade-up" style={{ animationDelay: '300ms' }}>
                   Bem-vindo ao Senso Chat
                 </h3>
-                <p className="text-gray-500 mb-6">
+                <p className="text-gray-500 mb-6 animate-smooth-fade-up" style={{ animationDelay: '340ms' }}>
                   Digite sua primeira mensagem abaixo para começar a conversar.
                 </p>
               </div>
             ) : (
               <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
-                {messages.map((message) => (
-                    <div key={message.id} className={`flex items-start gap-4 ${
+                {messages.map((message, idx) => (
+                    <div
+                      key={message.id}
+                      className={`flex items-start gap-4 ${
                       message.role === 'user' ? 'flex-row-reverse' : ''
-                    }`}>
+                    } animate-smooth-fade-up`}
+                      style={{ animationDelay: `${120 + idx * 80}ms`, willChange: 'transform, opacity' }}
+                    >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                         message.role === 'user' 
                           ? 'bg-blue-600 text-white' 
@@ -141,9 +154,12 @@ export default function SensoChatPage() {
             )}
           </div>
 
-                <div className="flex justify-center">
-                  <ChatInput />
-                </div>
+                 <div
+                   className="flex justify-center animate-smooth-fade-up"
+                   style={{ animationDelay: '240ms', willChange: 'transform, opacity' }}
+                 >
+                   <ChatInput />
+                 </div>
              
           
           </SidebarInset>

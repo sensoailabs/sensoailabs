@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { EmailInput } from '@/components/ui/email-input';
 import { Notification, useNotification } from '@/components/ui/notification';
 import { cn } from '@/lib/utils';
+import { validateCorporateEmailFormat, completeCorporateEmail } from '@/utils/validation';
+import { requestPasswordReset } from '@/services/passwordResetService';
 import logoSensoAI from '@/assets/logo_sensoai.svg';
 import coverRecovery from '@/assets/_banners/cover-recovery.png';
 import backgroundImage from '@/assets/background.png';
@@ -24,22 +25,7 @@ const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ className, ...p
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
 
-  const validateEmail = (value: string): string | undefined => {
-    if (!value) return 'E-mail é obrigatório';
-    
-    // Se contém @, deve ser o domínio correto
-    if (value.includes('@')) {
-      if (!value.endsWith('@sensoramadesign.com.br')) {
-        return 'E-mail deve ser do domínio @sensoramadesign.com.br';
-      }
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) return 'Formato de e-mail inválido';
-    } else {
-      // Apenas parte local, deve ter pelo menos 3 caracteres
-      if (value.length < 3) return 'E-mail deve ter pelo menos 3 caracteres';
-    }
-    return undefined;
-  };
+  const validateEmail = (value: string): string | undefined => validateCorporateEmailFormat(value);
 
   const handleEmailChange = (localPart: string) => {
     setEmail(localPart);
@@ -60,16 +46,16 @@ const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ className, ...p
 
     try {
       // Construir email completo se necessário
-      const fullEmail = email.includes('@') 
-        ? email 
-        : `${email}@sensoramadesign.com.br`;
-
-      // Simular chamada da API
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const fullEmail = completeCorporateEmail(email);
       
-      console.log('Enviando e-mail de recuperação para:', fullEmail);
-      showNotification('success', 'E-mail enviado!', 'Instruções de recuperação enviadas para seu e-mail.');
-      setIsSuccess(true);
+      const result = await requestPasswordReset(fullEmail);
+      if (result.success) {
+        console.log('Enviando e-mail de recuperação para:', fullEmail);
+        showNotification('success', 'E-mail enviado!', result.message || 'Instruções de recuperação enviadas para seu e-mail.');
+        setIsSuccess(true);
+      } else {
+        showNotification('error', 'Erro no envio', result.message || 'Erro ao enviar e-mail de recuperação. Tente novamente.');
+      }
       
     } catch (error: any) {
       console.error('Erro ao enviar e-mail de recuperação:', error);

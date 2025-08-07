@@ -1,4 +1,3 @@
-import React from 'react';
 import logoSensoAI from '@/assets/logo_sensoai.svg';
 
 export default function Logo() {

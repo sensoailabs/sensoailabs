@@ -21,7 +21,7 @@ export function useProjects() {
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  // const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
 
   // Converter ProjectResponse para Project
   const mapProjectResponse = (response: ProjectResponse): Project => ({
@@ -94,7 +94,7 @@ export function useProjects() {
       setProjects(prev => [optimisticProject, ...prev]);
 
       // API call
-      const response = await projectService.createProject({
+      await projectService.createProject({
         name: data.name,
         customInstructions: data.instructions
       });
@@ -222,20 +222,17 @@ export function useProjects() {
     }
   };
 
-  const activateProject = async (id: string): Promise<void> => {
-    try {
-      setError(null);
-      
-      // Aqui você implementaria a lógica para ativar o projeto
-      // Por enquanto, apenas log
-      console.log('Projeto ativado:', id);
-      
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao ativar projeto';
-      setError(errorMessage);
-      throw err;
-    }
-  };
+  // const activateProject = async (id: string): Promise<void> => {
+  //   try {
+  //     setError(null);
+  //     // Aqui você implementaria a lógica para ativar o projeto
+  //     console.log('Projeto ativado:', id);
+  //   } catch (err) {
+  //     const errorMessage = err instanceof Error ? err.message : 'Erro ao ativar projeto';
+  //     setError(errorMessage);
+  //     throw err;
+  //   }
+  // };
 
   const getProjectChats = async (projectId: string): Promise<Chat[]> => {
     try {
@@ -258,7 +255,6 @@ export function useProjects() {
   }, [loadProjects]);
 
   const setActiveProject = useCallback((id: string) => {
-    setActiveProjectId(id);
     setProjects(prev => prev.map(project => ({
       ...project,
       isActive: project.id === id

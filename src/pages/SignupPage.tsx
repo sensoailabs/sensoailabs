@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Card, CardContent } from './ui/card';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Button } from './ui/button';
-import { EmailInput } from './ui/email-input';
-import { PasswordInput } from './ui/password-input';
-import { Notification, useNotification } from './ui/notification';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { EmailInput } from '@/components/ui/email-input';
+import { PasswordInput } from '@/components/ui/password-input';
+import { Notification, useNotification } from '@/components/ui/notification';
 import { registerUser, getErrorMessage, getFieldErrors, type RegisterRequest } from '../services/authService';
 import { cn } from '@/lib/utils';
+import { validateCorporateEmailFormat, completeCorporateEmail } from '@/utils/validation';
 import logoSensoAI from '../assets/logo_sensoai.svg';
 import coverRegister from '../assets/_banners/cover-register.png';
 import backgroundImage from '../assets/background.png';
@@ -54,20 +55,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ className, ...props }) => {
         break;
       
       case 'email':
-        if (!value) return 'E-mail é obrigatório';
-        
-        // Se contém @, deve ser o domínio correto
-        if (value.includes('@')) {
-          if (!value.endsWith('@sensoramadesign.com.br')) {
-            return 'E-mail deve ser do domínio @sensoramadesign.com.br';
-          }
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!emailRegex.test(value)) return 'Formato de e-mail inválido';
-        } else {
-          // Apenas parte local, deve ter pelo menos 3 caracteres
-          if (value.length < 3) return 'E-mail deve ter pelo menos 3 caracteres';
-        }
-        break;
+        return validateCorporateEmailFormat(value);
       
       case 'password':
         if (!value) return 'Senha é obrigatória';
@@ -79,7 +67,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ className, ...props }) => {
           special: /[!@#$%^&*(),.?":{}|<>]/.test(value)
         };
         
-        const failedChecks = [];
+        const failedChecks = [] as string[];
         if (!passwordChecks.length) failedChecks.push('mínimo 8 caracteres');
         if (!passwordChecks.uppercase) failedChecks.push('1 letra maiúscula');
         if (!passwordChecks.lowercase) failedChecks.push('1 letra minúscula');
@@ -130,8 +118,8 @@ const SignupPage: React.FC<SignupPageProps> = ({ className, ...props }) => {
     
     // Validar todos os campos
     const newErrors: FormErrors = {};
-    Object.keys(formData).forEach(key => {
-      const error = validateField(key, formData[key as keyof FormData]);
+    (Object.keys(formData) as Array<keyof FormData>).forEach(key => {
+      const error = validateField(key, formData[key]);
       if (error) newErrors[key as keyof FormErrors] = error;
     });
 
@@ -144,9 +132,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ className, ...props }) => {
 
     try {
       // Construir email completo se necessário
-      const fullEmail = formData.email.includes('@') 
-        ? formData.email 
-        : `${formData.email}@sensoramadesign.com.br`;
+      const fullEmail = completeCorporateEmail(formData.email);
         
       const userData: RegisterRequest = {
         name: formData.fullName,
@@ -192,8 +178,8 @@ const SignupPage: React.FC<SignupPageProps> = ({ className, ...props }) => {
     }
   };
 
-  const isFormValid = Object.keys(errors).every(key => !errors[key as keyof FormErrors]) &&
-                     Object.values(formData).every(value => value.trim() !== '');
+  const isFormValid = (Object.keys(errors) as Array<keyof FormErrors>).every(key => !errors[key]) &&
+                     (Object.values(formData) as string[]).every(value => value.trim() !== '');
 
   return (
     <div className={cn("relative flex min-h-svh w-full items-center justify-center p-6 md:p-10", className)} {...props}>
@@ -328,11 +314,11 @@ const SignupPage: React.FC<SignupPageProps> = ({ className, ...props }) => {
         {/* Termos de uso */}
         <div className="text-balance text-center text-xs text-muted-foreground mt-6 opacity-0 translate-y-4 animate-[fadeInUp_0.6s_ease-out_2s_forwards]">
           Ao continuar, você concorda com nossos{' '}
-          <a href="#" className="underline underline-offset-4 hover:text-primary transition-colors duration-200">
+          <a href="#" className="underline underline-offset-4 hover:text-primary transition-colors duração-200">
             Termos de Serviço
           </a>{' '}
           e{' '}
-          <a href="#" className="underline underline-offset-4 hover:text-primary transition-colors duration-200">
+          <a href="#" className="underline underline-offset-4 hover:text-primary transition-colors duração-200">
             Política de Privacidade
           </a>.
         </div>
@@ -352,3 +338,5 @@ const SignupPage: React.FC<SignupPageProps> = ({ className, ...props }) => {
 };
 
 export default SignupPage;
+
+

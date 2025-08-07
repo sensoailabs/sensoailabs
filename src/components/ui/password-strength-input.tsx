@@ -4,7 +4,6 @@ import { useId, useMemo, useState } from "react"
 import { CheckIcon, EyeIcon, EyeOffIcon, XIcon } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 
 interface PasswordStrengthInputProps {
   id?: string

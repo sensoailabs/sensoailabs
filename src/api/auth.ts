@@ -269,15 +269,6 @@ export const resetPassword = async (data: ResetPasswordRequest): Promise<ResetPa
   }
 };
 
-// Função para gerar token de recuperação
-const generateResetToken = (): string => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let token = '';
-  for (let i = 0; i < 64; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return token;
-};
 
 // Função para validar força da senha
 export const validatePasswordStrength = (password: string) => {
@@ -459,10 +450,6 @@ const generateJWTToken = (userId: number, email: string): string => {
   return `jwt_${btoa(JSON.stringify(payload))}_${Date.now()}`;
 };
 
-// Função para gerar token de sessão
-const generateSessionToken = (): string => {
-  return `session_${Math.random().toString(36).substring(2)}_${Date.now()}`;
-};
 
 // Função para logout
 export const logoutUser = async (token: string): Promise<void> => {

@@ -18,15 +18,30 @@ export default {
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
-  		animation: {
+  			animation: {
   			'pulse-slow': 'pulse-slow 6s ease-in-out infinite',
   			'pulse-slow-delayed': 'pulse-slow-delayed 8s ease-in-out infinite 2s',
   			'pulse-slow-reverse': 'pulse-slow-reverse 10s ease-in-out infinite 4s',
   			'organic-float': 'organic-float 20s ease-in-out infinite',
   			'organic-drift': 'organic-drift 15s ease-in-out infinite 3s',
   			'organic-wave': 'organic-wave 25s ease-in-out infinite 7s',
-  			'organic-edge': 'organic-edge 30s ease-in-out infinite 5s'
+  				'organic-edge': 'organic-edge 30s ease-in-out infinite 5s',
+        'smooth-fade-up': 'smooth-fade-up 1s cubic-bezier(0.22, 1, 0.36, 1) both'
   		},
+        keyframes: {
+          'smooth-fade-up': {
+            '0%': {
+              opacity: '0',
+              transform: 'translateY(16px) scale(0.98)',
+              filter: 'blur(6px)'
+            },
+            '100%': {
+              opacity: '1',
+              transform: 'translateY(0) scale(1)',
+              filter: 'blur(0)'
+            }
+          }
+        },
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',

@@ -94,13 +94,28 @@ class ProfileService {
 
   async changePassword(userId: string, passwordData: ChangePasswordData): Promise<void> {
     try {
+      // Verificar senha atual reautenticando o usuário
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !user.email) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: passwordData.currentPassword,
+      });
+
+      if (reauthError) {
+        throw new Error('Senha atual incorreta');
+      }
+
       // Atualizar senha usando Supabase Auth
-      const { error } = await supabase.auth.updateUser({
+      const { error: updateError } = await supabase.auth.updateUser({
         password: passwordData.newPassword
       });
 
-      if (error) {
-        console.error('Erro ao alterar senha:', error);
+      if (updateError) {
+        console.error('Erro ao alterar senha:', updateError);
         throw new Error('Erro ao alterar senha');
       }
 
@@ -110,7 +125,7 @@ class ProfileService {
         .update({ updated_at: new Date().toISOString() })
         .eq('id', userId);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao alterar senha:', error);
       throw error;
     }

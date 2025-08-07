@@ -3,6 +3,7 @@ import {
   Bell,
   MessageSquare,
   ArrowRightIcon,
+  ShieldCheck,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
@@ -26,6 +27,10 @@ export default function Header() {
 
   const handleChatClick = () => {
     navigate('/chat');
+  };
+
+  const handleAnonClick = () => {
+    navigate('/anonimizador');
   };
 
   return (
@@ -75,6 +80,24 @@ export default function Header() {
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="px-2 py-1 text-xs">
                   <p>Chat com IA</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={handleAnonClick}
+                  >
+                    <ShieldCheck size={16} />
+                    <span className="sr-only">Anonimizador</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="px-2 py-1 text-xs">
+                  <p>Anonimizador</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

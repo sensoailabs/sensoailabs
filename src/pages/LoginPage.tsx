@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useId } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { EmailInput } from '@/components/ui/email-input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Notification, useNotification } from '@/components/ui/notification';
 import { cn } from '@/lib/utils';
+import { validateCorporateEmailFormat, completeCorporateEmail } from '@/utils/validation';
 import logoSensoAI from '../assets/logo_sensoai.svg';
 import coverLogin from '../assets/_banners/cover-login.png';
 import backgroundImage from '../assets/background.png';
@@ -32,7 +33,6 @@ const LoginPage: React.FC<LoginPageProps> = ({
   className,
   ...props 
 }) => {
-  const navigate = useNavigate();
   const checkboxId = useId();
   const { notification, showNotification, hideNotification } = useNotification();
   
@@ -61,23 +61,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
   }, []);
 
   // Validação de formato de e-mail
-  const validateEmail = (email: string): string | undefined => {
-    if (!email) return 'E-mail é obrigatório';
-    
-    // Se contém @, deve ser o domínio correto
-    if (email.includes('@')) {
-      if (!email.endsWith('@sensoramadesign.com.br')) {
-        return 'E-mail deve ser do domínio @sensoramadesign.com.br';
-      }
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) return 'Formato de e-mail inválido';
-    } else {
-      // Apenas parte local, deve ter pelo menos 3 caracteres
-      if (email.length < 3) return 'E-mail deve ter pelo menos 3 caracteres';
-    }
-    
-    return undefined;
-  };
+  const validateEmail = (email: string): string | undefined => validateCorporateEmailFormat(email);
 
   // Validação de senha
   const validatePassword = (password: string): string | undefined => {
@@ -132,9 +116,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
 
     try {
       // Construir email completo se necessário
-      const fullEmail = formData.email.includes('@') 
-        ? formData.email 
-        : `${formData.email}@sensoramadesign.com.br`;
+      const fullEmail = completeCorporateEmail(formData.email);
         
       // Usar API REST real para autenticação
       const { authService } = await import('../services/authService');
@@ -345,3 +327,5 @@ const LoginPage: React.FC<LoginPageProps> = ({
 };
 
 export default LoginPage;
+
+

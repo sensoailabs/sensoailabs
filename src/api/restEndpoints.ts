@@ -1,6 +1,6 @@
 // APIs REST para recuperação de senha
 import { supabase } from '../lib/supabase';
-import { API_ROUTES, buildApiUrl, DEFAULT_HEADERS, REQUEST_TIMEOUT } from '../config/apiRoutes';
+// import { API_ROUTES, buildApiUrl, DEFAULT_HEADERS, REQUEST_TIMEOUT } from '../config/apiRoutes';
 
 // Importação do serviço de e-mail
 import { sendPasswordResetEmail } from '../services/emailService';

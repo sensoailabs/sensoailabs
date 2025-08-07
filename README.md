@@ -73,8 +73,13 @@ O projeto estará disponível em `http://localhost:5173`
 src/
 ├── components/          # Componentes React
 │   ├── ui/             # Componentes base do shadcn/ui
-│   ├── SignupPage.tsx  # Página de cadastro
-│   └── LoginPage.tsx   # Página de login
+│   └── ui/
+│
+├── pages/
+│   ├── LoginPage.tsx      # Página de login
+│   ├── SignupPage.tsx     # Página de cadastro
+│   ├── ForgotPasswordPage.tsx
+│   └── ResetPasswordPage.tsx
 ├── services/           # Serviços e APIs
 │   └── authService.ts  # Serviço de autenticação
 ├── lib/               # Utilitários

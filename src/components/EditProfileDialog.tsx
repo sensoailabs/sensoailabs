@@ -1,11 +1,11 @@
 "use client"
 
-import { useId, useState, useEffect, useCallback, useMemo } from "react"
-import { CheckIcon, ImagePlusIcon, XIcon, EyeIcon, EyeOffIcon, Loader2 } from "lucide-react"
+import { useId, useState, useEffect, useCallback } from "react"
+import { ImagePlusIcon, EyeIcon, EyeOffIcon, Loader2 } from "lucide-react"
 
-import { useCharacterLimit } from "@/hooks/use-character-limit"
+// import { useCharacterLimit } from "@/hooks/use-character-limit"
 import { useFileUpload } from "@/hooks/use-file-upload"
-import { useForm } from "@/hooks/useForm"
+// import { useForm } from "@/hooks/useForm"
 import { useGlobalNotification } from "@/contexts/NotificationContext"
 import { validatePassword as validatePasswordUtil, validatePasswordConfirmation } from "@/utils/validation"
 import { profileService } from "@/services/profileService"
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+// import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AvatarSkeleton, ProfileFormSkeleton, PasswordFormSkeleton } from "@/components/ui/profile-skeleton"
 
@@ -98,11 +98,11 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
     }
   }, [errors])
 
-  const maxLength = 180
-  const { handleChange: handleBioChange } = useCharacterLimit({
-    maxLength,
-    initialValue: formData.bio,
-  })
+  // const maxLength = 180
+  // const { handleChange: handleBioChange } = useCharacterLimit({
+  //   maxLength,
+  //   initialValue: formData.bio,
+  // })
 
   // Carregar dados do usuário quando o dialog abrir
   useEffect(() => {
@@ -258,11 +258,33 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
 
       // Alterar senha se todos os campos foram preenchidos
       if (formData.newPassword && formData.currentPassword && formData.confirmPassword) {
-        await profileService.changePassword(user.id, {
-          currentPassword: formData.currentPassword,
-          newPassword: formData.newPassword
-        })
-        updatedItems.push('senha')
+        try {
+          await profileService.changePassword(user.id, {
+            currentPassword: formData.currentPassword,
+            newPassword: formData.newPassword
+          })
+          updatedItems.push('senha')
+        } catch (err: any) {
+          const message = (err && err.message) ? String(err.message) : 'Erro ao alterar senha'
+          if (message.toLowerCase().includes('senha atual incorreta')) {
+            setErrors(prev => ({ ...prev, currentPassword: 'Senha atual incorreta' }))
+            showNotification({
+              type: 'error',
+              title: 'Senha atual incorreta',
+              message: 'A senha atual digitada não confere. Tente novamente.'
+            })
+            setLoading(false)
+            return
+          }
+          // Outros erros
+          showNotification({
+            type: 'error',
+            title: 'Erro ao alterar senha',
+            message: message
+          })
+          setLoading(false)
+          return
+        }
       }
 
       // Mostrar notificação específica baseada no que foi atualizado
@@ -346,12 +368,11 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
                 ) : (
                   <>
                     <div className="flex justify-center">
-                       <Avatar 
-                         user={user} 
-                         onFileSelect={setSelectedFile}
-                         selectedFile={selectedFile}
-                         loading={loading}
-                       />
+                        <Avatar 
+                          user={user} 
+                          onFileSelect={setSelectedFile}
+                          selectedFile={selectedFile}
+                        />
                      </div>
                     
                     <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
@@ -495,13 +516,12 @@ export default function EditProfileDialog({ children }: EditProfileDialogProps) 
   )
 }
 
-function Avatar({ user, onFileSelect, selectedFile, loading }: { 
+function Avatar({ user, onFileSelect, selectedFile }: { 
   user: UserProfile | null
   onFileSelect: (file: File | null) => void
   selectedFile: File | null
-  loading?: boolean
 }) {
-  const [{ files }, { openFileDialog, getInputProps }] = useFileUpload({
+  const [, { openFileDialog, getInputProps }] = useFileUpload({
     accept: "image/*",
     initialFiles: [],
   })

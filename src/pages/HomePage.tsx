@@ -6,6 +6,7 @@ import backgroundImage from '../assets/background.png';
 import iconAppAnonimizador from '../assets/_icons-modulos/icon-app-anonimizador.png';
 import iconAppSensoChat from '../assets/_icons-modulos/icon-app-senso-chat.png';
 import iconAppRecrutamento from '../assets/_icons-modulos/icon-app-recrutamento.png';
+import iconAppHeuristica from '../assets/_icons-modulos/icon-app-heuristica.png';
 import { useUser } from '../contexts/UserContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Grid3X3, MessageSquare } from 'lucide-react';
@@ -144,8 +145,7 @@ export default function HomePage() {
                           iconSrc={iconAppAnonimizador}
                           titulo="Anonimizador de dados"
                           descricao="Anonimize informações sensíveis de capturas de telas e documentos automaticamente"
-                          tags={[
-                            { label: "Geral", type: "primary" },
+                          tags={[                           
                             { label: "Benchmarking", type: "primary" },
                             { label: "Navegação guiada", type: "primary" }
                           ]}
@@ -161,8 +161,7 @@ export default function HomePage() {
                           iconSrc={iconAppSensoChat}
                           titulo="Senso Chat"
                           descricao="Você pode conversar de forma segura com a IA da Senso"
-                          tags={[
-                            { label: "Geral", type: "primary" },
+                          tags={[                            
                             { label: "Conversação", type: "primary" },
                             { label: "Análise", type: "primary" }
                           ]}
@@ -178,10 +177,25 @@ export default function HomePage() {
                           iconSrc={iconAppRecrutamento}
                           titulo="Assistente de recrutamento"
                           descricao="Desenvolva roteiros personalizados de recrutamento e screening automaticamente"
-                          tags={[
-                            { label: "Geral", type: "primary" },
+                          tags={[                     
                             { label: "Recrutamento", type: "primary" },
                             { label: "Screening", type: "primary" }
+                          ]}
+                        />
+                      </div>
+
+
+                         {/* Card 4 - Assistente de análise heuristica */}
+                      <div
+                        className="animate-smooth-fade-up"
+                        style={{ animationDelay: '500ms', willChange: 'transform, opacity' }}
+                      >
+                        <CardAplicativos
+                          iconSrc={iconAppHeuristica}
+                          titulo="Assistente de Análise Heurística"
+                          descricao="Seu avaliador extra de heurísticas, como se fosse mais um Designer na equipe."
+                          tags={[                     
+                            { label: "Análise Heurística", type: "primary" },                           
                           ]}
                         />
                       </div>

@@ -29,7 +29,7 @@ export function CardAplicativos({
   imagemAlt
 }: CardAplicativosProps) {
   return (
-    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden w-full max-w-[296px]">
+    <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden w-full max-w-[296px]">
       <div className="p-5">
         {/* Ícone */}
         <div className="flex justify-start mb-4">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Header from '@/components/Header';
 import ChatInput from '@/components/ChatInput';
 import LogoAnimated from '@/components/LogoAnimated';
@@ -18,19 +18,74 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { chatService } from '@/services/chatService';
+import type { ChatMessage, Conversation } from '@/services/chatService';
+import { useChatStream } from '@/hooks/useChatStream';
+import StreamingMessage from '@/components/StreamingMessage';
+import TypingIndicator from '@/components/TypingIndicator';
+import { supabase } from '@/lib/supabase';
+import logger from '@/lib/clientLogger';
 
-interface Message {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant';
-  timestamp: Date;
-  model?: string;
-}
+// Usando ChatMessage do serviço
 
 export default function SensoChatPage() {
-  const [messages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { streamingMessage, isTyping, startStreaming, isStreaming, stopStreaming } = useChatStream();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Verificar usuário autenticado
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUserId(user.id);
+      }
+    };
+    checkUser();
+  }, []);
+  
+  // Carregar mensagens da conversa atual
+  useEffect(() => {
+    if (currentConversation?.id) {
+      loadConversationMessages(currentConversation.id);
+    }
+  }, [currentConversation]);
+  
+  // Rolagem automática para última mensagem
+   useEffect(() => {
+     scrollToBottom();
+   }, [messages, streamingMessage, isTyping]);
+  
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
+  const loadConversationMessages = async (conversationId: string) => {
+    try {
+      setIsLoading(true);
+      const conversationMessages = await chatService.getConversationMessages(conversationId);
+      setMessages(conversationMessages);
+    } catch (error) {
+      logger.error('Error loading conversation messages', { error, conversationId });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleMessageSent = (message: ChatMessage) => {
+    setMessages(prev => [...prev, message]);
+  };
+  
+  const handleConversationCreated = (conversation: Conversation) => {
+    setCurrentConversation(conversation);
+    setMessages([]); // Limpar mensagens para nova conversa
+  };
 
-  const formatTime = (date: Date) => {
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
     return new Intl.DateTimeFormat('pt-BR', {
       hour: '2-digit',
       minute: '2-digit',
@@ -138,17 +193,35 @@ export default function SensoChatPage() {
                         <div className={`text-xs text-gray-500 mt-2 ${
                           message.role === 'user' ? 'text-right' : 'text-left'
                         }`}>
-                          <span>{formatTime(message.timestamp)}</span>
-                          {message.model && message.role === 'assistant' && (
+                          <span>{message.created_at && formatTime(message.created_at)}</span>
+                          {message.model_used && message.role === 'assistant' && (
                             <span className="ml-2">
-                              {getModelIcon(message.model)} {message.model.toUpperCase()}
+                              {getModelIcon(message.model_used)} {message.model_used.toUpperCase()}
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
                   ))}
-
+                  
+                  {/* Indicador de digitando */}
+                  <TypingIndicator 
+                    isVisible={isTyping} 
+                    modelName="Senso AI"
+                  />
+                  
+                  {/* Mensagem de streaming */}
+                  {streamingMessage && (
+                    <div className="px-4 pb-4">
+                      <StreamingMessage 
+                        message={streamingMessage} 
+                        getModelIcon={getModelIcon}
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Elemento para rolagem automática */}
+                  <div ref={messagesEndRef} />
 
               </div>
             )}
@@ -158,7 +231,14 @@ export default function SensoChatPage() {
                    className="flex justify-center animate-smooth-fade-up"
                    style={{ animationDelay: '240ms', willChange: 'transform, opacity' }}
                  >
-                   <ChatInput />
+                   <ChatInput 
+                     onMessageSent={handleMessageSent}
+                     onConversationCreated={handleConversationCreated}
+                     currentConversationId={currentConversation?.id}
+                     currentUserId={currentUserId || undefined}
+                     isLoading={isLoading}
+                     chatStreamHook={{ streamingMessage, isTyping, startStreaming, isStreaming, stopStreaming }}
+                   />
                  </div>
              
           

@@ -7,25 +7,127 @@ import {
   Paperclip, 
   Telescope, 
   Globe, 
-  Send
+  Send,
+  Loader2
 } from 'lucide-react';
+import { chatService } from '@/services/chatService';
+import logger from '@/lib/clientLogger';
+import type { ChatMessage, Conversation } from '@/services/chatService';
+import { useChatStream } from '@/hooks/useChatStream';
 
-export default function ChatInput() {
+interface ChatInputProps {
+  onMessageSent?: (message: ChatMessage) => void;
+  onConversationCreated?: (conversation: Conversation) => void;
+  currentConversationId?: string;
+  currentUserId?: string;
+  isLoading?: boolean;
+  enableStreaming?: boolean;
+  chatStreamHook?: ReturnType<typeof useChatStream>;
+}
+
+export default function ChatInput({ 
+  onMessageSent, 
+  onConversationCreated, 
+  currentConversationId,
+  currentUserId,
+  isLoading = false,
+  enableStreaming = true,
+  chatStreamHook
+}: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [selectedModel, setSelectedModel] = useState('gpt-4');
   const [deepResearch, setDeepResearch] = useState(false);
   const [webSearch, setWebSearch] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const defaultHook = useChatStream();
+  const { startStreaming, isStreaming, isTyping } = chatStreamHook || defaultHook;
   const id = useId();
+  
+  const isProcessing = isSending || isStreaming || isLoading || isTyping;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim()) {
-      console.log('Enviando mensagem:', message);
-      console.log('Deep Research:', deepResearch);
-      console.log('Web Search:', webSearch);
-      // Aqui será implementada a lógica de envio
-      setMessage('');
+    if (message.trim() && !isProcessing) {
+      setIsSending(true);
+      
+      try {
+        const userMessage = message.trim();
+        setMessage('');
+        
+        if (!currentUserId) {
+          throw new Error('Usuário não autenticado');
+        }
+        
+        // Se não há conversa ativa, criar uma nova
+        let conversationId = currentConversationId;
+        if (!conversationId) {
+          const newConversation = await chatService.createConversation(
+            currentUserId,
+            'Nova Conversa',
+            selectedModel
+          );
+          conversationId = newConversation.id!;
+          onConversationCreated?.(newConversation);
+        }
+        
+        // Criar mensagem do usuário primeiro
+        const userMessage_obj = await chatService.saveMessage({
+          conversation_id: conversationId,
+          role: 'user',
+          content: userMessage,
+          model_used: selectedModel
+        });
+        onMessageSent?.(userMessage_obj);
+        
+        if (enableStreaming) {
+          // Usar streaming
+          await startStreaming({
+            message: userMessage,
+            conversationId,
+            userId: currentUserId,
+            preferredProvider: selectedModel
+          }, (completedMessage) => {
+            onMessageSent?.(completedMessage);
+          });
+        } else {
+          // Processar chat completo sem streaming
+          const response = await chatService.processChat({
+            message: userMessage,
+            conversationId,
+            userId: currentUserId,
+            preferredProvider: selectedModel
+          });
+          
+          // Buscar a mensagem da IA
+          const messages = await chatService.getConversationMessages(conversationId);
+          const aiMessage = messages[messages.length - 1];
+          if (aiMessage && aiMessage.role === 'assistant') {
+            onMessageSent?.(aiMessage);
+          }
+        }
+        
+        logger.info('Chat message processed successfully', {
+          conversationId,
+          model: selectedModel,
+          webSearch,
+          deepResearch
+        });
+        
+      } catch (error) {
+        logger.error('Error sending message', { error });
+        console.error('Erro ao enviar mensagem:', error);
+      } finally {
+        setIsSending(false);
+      }
     }
+  };
+
+  const getProcessingStatus = () => {
+    if (isTyping) return "IA está digitando...";
+    if (isStreaming) return "Recebendo resposta...";
+    if (isSending) return "Enviando mensagem...";
+    if (isLoading) return "Carregando...";
+    return "Processando...";
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -118,10 +220,15 @@ export default function ChatInput() {
             {/* Botão de envio à direita */}
             <Button
               type="submit"
-              disabled={!message.trim()}
+              disabled={!message.trim() || isProcessing}
               className="h-8 w-8 p-0 bg-black hover:bg-gray-800 disabled:bg-gray-200 disabled:cursor-not-allowed rounded-lg"
+              title={isProcessing ? getProcessingStatus() : "Enviar mensagem"}
             >
-              <Send className="w-4 h-4 text-white" />
+              {isProcessing ? (
+                <Loader2 className="w-4 h-4 text-white animate-spin" />
+              ) : (
+                <Send className="w-4 h-4 text-white" />
+              )}
             </Button>
           </div>
         </form>

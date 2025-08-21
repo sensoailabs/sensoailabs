@@ -22,7 +22,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { chatService } from '@/services/chatService';
+import { chatService, getConversationMessagesPaginated } from '@/services/chatService';
 import type { ChatMessage, Conversation, ChatRequest } from '@/services/chatService';
 import { useChatStream } from '@/hooks/useChatStream';
 import StreamingMessage from '@/components/StreamingMessage';
@@ -40,8 +40,92 @@ export default function SensoChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasFirstMessage, setHasFirstMessage] = useState(false);
   const [newMessageId, setNewMessageId] = useState<string | null>(null);
+  const [refreshSidebar, setRefreshSidebar] = useState(0); // Trigger para atualizar sidebar
+  
+  // Estados para paginação de mensagens
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  const [totalMessageCount, setTotalMessageCount] = useState(0);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const { streamingMessage, isTyping, startStreaming, isStreaming, stopStreaming } = useChatStream();
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Sincronizar currentUserId com userData
+  useEffect(() => {
+    if (userData?.id) {
+      setCurrentUserId(String(userData.id));
+    }
+  }, [userData?.id]);
+
+  // Carregar mensagens de uma conversa com paginação
+  const loadMessages = async (conversationId: string, page: number = 1, reset: boolean = false) => {
+    setIsLoadingMessages(true);
+    try {
+      const result = await getConversationMessagesPaginated(conversationId, page, 50);
+      
+      if (reset) {
+        setMessages(result.messages);
+      } else {
+        setMessages(prev => [...result.messages, ...prev]); // Adicionar mensagens antigas no início
+      }
+      
+      setHasMoreMessages(result.hasMore);
+      setTotalMessageCount(result.totalCount);
+      setCurrentPage(result.currentPage);
+      
+      logger.info('Messages loaded:', {
+        conversationId,
+        page,
+        totalCount: result.totalCount,
+        hasMore: result.hasMore,
+        loadedCount: result.messages.length
+      });
+    } catch (error) {
+      logger.error('Erro ao carregar mensagens:', error);
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  };
+
+  // Carregar mais mensagens antigas
+  const loadMoreMessages = () => {
+    if (!isLoadingMessages && hasMoreMessages && currentConversation?.id) {
+      loadMessages(currentConversation.id, currentPage + 1, false);
+    }
+  };
+
+  // Handler para seleção de conversa na sidebar
+  const handleConversationSelect = async (conversation: Conversation) => {
+    try {
+      setCurrentConversation(conversation);
+      
+      // Reset estados de paginação
+      setCurrentPage(1);
+      setHasMoreMessages(false);
+      setTotalMessageCount(0);
+      
+      // Carregar primeira página de mensagens
+      await loadMessages(conversation.id!, 1, true);
+      
+      setHasFirstMessage(true);
+      
+      logger.info('Conversation selected:', {
+        title: conversation.title,
+        conversationId: conversation.id
+      });
+    } catch (error) {
+      logger.error('Erro ao carregar contexto da conversa:', error);
+    }
+  };
+
+  // Handler para novo chat
+  const handleNewChat = () => {
+    setCurrentConversation(null);
+    setMessages([]);
+    setHasFirstMessage(false);
+    setNewMessageId(null);
+    logger.info('Novo chat iniciado');
+  };
   
   // Verificar usuário autenticado
   useEffect(() => {
@@ -159,6 +243,8 @@ export default function SensoChatPage() {
 
   const handleConversationCreated = (conversation: Conversation) => {
     setCurrentConversation(conversation);
+    // Atualizar sidebar para mostrar a nova conversa
+    setRefreshSidebar(prev => prev + 1);
   };
 
   const handleRegenerateMessage = async (messageIndex: number) => {
@@ -214,7 +300,12 @@ export default function SensoChatPage() {
       {/* Main Content with Sidebar */}
       <main className="">
         <SidebarProvider>
-          <SidebarChat />
+          <SidebarChat 
+          onConversationSelect={handleConversationSelect}
+          onNewChat={handleNewChat}
+          currentConversationId={currentConversation?.id}
+          refreshTrigger={refreshSidebar}
+        />
           <SidebarInset className="flex flex-col min-h-[calc(100vh-4rem)] relative">
             <header
               className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 animate-smooth-fade-up"
@@ -267,6 +358,26 @@ export default function SensoChatPage() {
                 </div>
               ) : (
                 <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+                {/* Botão para carregar mensagens anteriores */}
+                {hasMoreMessages && (
+                  <div className="flex justify-center py-4">
+                    <button
+                      onClick={loadMoreMessages}
+                      disabled={isLoadingMessages}
+                      className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoadingMessages ? 'Carregando...' : 'Carregar mensagens anteriores'}
+                    </button>
+                  </div>
+                )}
+                
+                {/* Contador de mensagens */}
+                {totalMessageCount > 0 && (
+                  <div className="text-center text-xs text-gray-500 py-2">
+                    {messages.length} de {totalMessageCount} mensagens
+                  </div>
+                )}
+                
                 {messages.map((message, idx) => (
                     <div
                       key={message.id}

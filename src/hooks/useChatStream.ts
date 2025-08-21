@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { chatService } from '@/services/chatService';
-import type { ChatMessage, ChatRequest } from '@/services/chatService';
+import type { ChatMessage, ChatRequest, Conversation } from '@/services/chatService';
 import logger from '@/lib/clientLogger';
 
 export interface StreamingMessage {
@@ -18,7 +18,9 @@ export const useChatStream = () => {
 
   const startStreaming = useCallback(async (
     request: ChatRequest,
-    onMessageComplete?: (message: ChatMessage) => void
+    onMessageComplete?: (message: ChatMessage) => void,
+    onConversationCreated?: (conversation: Conversation) => void,
+    onUserMessageSaved?: (message: ChatMessage) => void
   ) => {
     try {
       setIsTyping(true);
@@ -43,7 +45,17 @@ export const useChatStream = () => {
       
       // Processar stream
       for await (const chunk of chatService.processChatStream(request)) {
-        if (chunk.type === 'chunk') {
+        if (chunk.type === 'message') {
+          // Nova conversa foi criada
+          if (!request.conversationId && onConversationCreated && chunk.data.conversation) {
+            onConversationCreated(chunk.data.conversation);
+          }
+          
+          // Mensagem do usuário foi salva
+          if (onUserMessageSaved && chunk.data.userMessage) {
+            onUserMessageSaved(chunk.data.userMessage);
+          }
+        } else if (chunk.type === 'chunk') {
           fullContent += chunk.data.content || '';
           setStreamingMessage(prev => prev ? {
             ...prev,

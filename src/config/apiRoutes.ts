@@ -17,7 +17,31 @@ export const API_ROUTES = {
   USER: {
     PROFILE: '/api/user/profile',
     UPDATE: '/api/user/update',
-    DELETE: '/api/user/delete'
+    DELETE: '/api/user/delete',
+    PREFERENCES: '/api/user/preferences'
+  },
+  
+  // Endpoints de chat e conversas
+  CHAT: {
+    CONVERSATIONS: '/api/chat/conversations',
+    CONVERSATIONS_PAGINATED: '/api/chat/conversations/paginated',
+    CONVERSATION: '/api/chat/conversation',
+    MESSAGES: '/api/chat/messages',
+    // Mensagens de conversa
+    GET_CONVERSATION_MESSAGES: '/api/chat/conversation/:id/messages',
+    CONVERSATION_MESSAGES_PAGINATED: '/api/chat/conversation/:id/messages/paginated',
+    // Contexto completo da conversa
+    GET_CONVERSATION_CONTEXT: '/api/chat/conversation/:id/context',
+    SEARCH: '/api/chat/search',
+    PROCESS: '/api/chat/process',
+    STREAM: '/api/chat/stream',
+    TITLE_GENERATE: '/api/chat/generate-title'
+   },
+  
+  // Endpoints de configurações
+  CONFIG: {
+    MODELS: '/api/config/models',
+    ACTIVE_MODELS: '/api/config/models/active'
   }
 };
 

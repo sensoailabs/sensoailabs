@@ -140,7 +140,12 @@ export class AuthService {
         return null;
       }
 
-      return userData;
+      // Retornar dados do usuário com o UUID do Supabase Auth como ID principal
+      return {
+        ...userData,
+        id: user.id, // Usar UUID do Supabase Auth
+        numeric_id: userData.id // Manter ID numérico como referência
+      };
     } catch (error) {
       console.error('Erro ao obter dados do usuário:', error);
       return null;

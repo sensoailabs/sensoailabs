@@ -58,56 +58,45 @@ export default function ChatInput({
           throw new Error('Usuário não autenticado');
         }
         
-        // Se não há conversa ativa, criar uma nova
-        let conversationId = currentConversationId;
-        if (!conversationId) {
-          const newConversation = await chatService.createConversation(
-            currentUserId,
-            'Nova Conversa',
-            selectedModel
-          );
-          conversationId = newConversation.id!;
-          onConversationCreated?.(newConversation);
-        }
-        
-        // Criar mensagem do usuário primeiro
-        const userMessage_obj = await chatService.saveMessage({
-          conversation_id: conversationId,
-          role: 'user',
-          content: userMessage,
-          model_used: selectedModel
-        });
-        onMessageSent?.(userMessage_obj);
-        
         if (enableStreaming) {
-          // Usar streaming
+          // Usar streaming com geração automática de título
           await startStreaming({
             message: userMessage,
-            conversationId,
+            conversationId: currentConversationId,
             userId: currentUserId,
             preferredProvider: selectedModel
           }, (completedMessage) => {
             onMessageSent?.(completedMessage);
+          }, (newConversation) => {
+            onConversationCreated?.(newConversation);
+          }, (savedUserMessage) => {
+            // Atualizar a mensagem do usuário com dados do banco (ID real, etc.)
+            onMessageSent?.(savedUserMessage);
           });
         } else {
           // Processar chat completo sem streaming
           const response = await chatService.processChat({
             message: userMessage,
-            conversationId,
+            conversationId: currentConversationId,
             userId: currentUserId,
             preferredProvider: selectedModel
           });
           
           // Buscar a mensagem da IA
-          const messages = await chatService.getConversationMessages(conversationId);
+          const messages = await chatService.getConversationMessages(response.conversation.id!);
           const aiMessage = messages[messages.length - 1];
           if (aiMessage && aiMessage.role === 'assistant') {
             onMessageSent?.(aiMessage);
           }
+          
+          // Notificar sobre nova conversa se foi criada
+          if (!currentConversationId) {
+            onConversationCreated?.(response.conversation);
+          }
         }
         
         logger.info('Chat message processed successfully', {
-          conversationId,
+          conversationId: currentConversationId,
           model: selectedModel,
           webSearch,
           deepResearch

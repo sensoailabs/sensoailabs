@@ -138,7 +138,7 @@ export default function ChatInput({
   };
 
   return (
-    <div className="w-[680px] mx-auto">
+    <div className="w-full max-w-4xl mx-auto">
       {/* Container do Input */}
       <div className="relative bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200">
         <form onSubmit={handleSubmit} className="flex flex-col">
@@ -148,7 +148,7 @@ export default function ChatInput({
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Pergunte-me qualquer coisa..."
-            className="min-h-[120px] max-h-[300px] resize-none border-0 bg-transparent p-4 text-base placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="min-h-[120px] max-h-[600px] resize-none border-0 bg-transparent p-4 text-base placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
             style={{ 
               fontSize: '16px',
               lineHeight: '1.5'
@@ -235,7 +235,7 @@ export default function ChatInput({
       </div>
 
       {/* Texto informativo */}
-      <p className="text-xs text-gray-500 text-center mt-3">
+      <p className="text-xs text-gray-500 text-center mt-2">
         Senso AI pode cometer erros. Considere verificar informações importantes.
       </p>
     </div>

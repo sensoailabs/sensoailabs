@@ -62,10 +62,8 @@ export const useChatStream = () => {
             onMessageComplete(chunk.data.message);
           }
           
-          // Limpar streaming após um delay
-          setTimeout(() => {
-            setStreamingMessage(null);
-          }, 500);
+          // Limpar streaming imediatamente para transição fluida
+          setStreamingMessage(null);
           
           break;
         }

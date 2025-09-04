@@ -18,6 +18,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { isApiConfigured } from "@/lib/apiHealthCheck"
 
 // Importando os logos dos modelos
 import gptLogo from "@/assets/_icons-model-ai/gpt.svg"
@@ -26,30 +27,52 @@ import geminiLogo from "@/assets/_icons-model-ai/gemini.svg"
 
 const models = [
   {
-    value: "gpt-4",
-    label: "GPT-4",
-    logo: gptLogo
+    value: "openai",
+    label: "GPT-4o",
+    logo: "/src/assets/_icons-model-ai/gpt.svg"
   },
   {
-    value: "gpt-3.5",
-    label: "GPT-3.5 Turbo",
-    logo: gptLogo
+    value: "anthropic",
+    label: "Claude 3.5 Sonnet",
+    logo: "/src/assets/_icons-model-ai/claude.svg"
   },
   {
-    value: "claude",
-    label: "Claude 3",
-    logo: claudeLogo
-  },
-  {
-    value: "gemini",
-    label: "Gemini Pro",
-    logo: geminiLogo
-  },
+    value: "google",
+    label: "Gemini 2.0 Flash",
+    logo: "/src/assets/_icons-model-ai/gemini.svg"
+  }
 ]
 
 interface ModelComboboxProps {
   value: string
   onValueChange: (value: string) => void
+}
+
+// Componente para indicador de status
+function StatusIndicator({ provider }: { provider: string }) {
+  const isConfigured = isApiConfigured(provider)
+  
+  const getStatusColor = () => {
+    return isConfigured ? 'bg-green-500' : 'bg-red-500'
+  }
+
+  const getTooltipText = () => {
+    return isConfigured 
+      ? `${provider.toUpperCase()}: Configurado` 
+      : `${provider.toUpperCase()}: Não configurado`
+  }
+
+  return (
+    <div className="relative group">
+      <div 
+        className={`w-1.5 h-1.5 rounded-full ${getStatusColor()} border border-white shadow-sm`}
+        title={getTooltipText()}
+      />
+      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+        {getTooltipText()}
+      </div>
+    </div>
+  )
 }
 
 export function ModelCombobox({ value, onValueChange }: ModelComboboxProps) {
@@ -69,11 +92,14 @@ export function ModelCombobox({ value, onValueChange }: ModelComboboxProps) {
         >
           <div className="flex items-center gap-1.5">
             {selectedModel && (
-              <img 
-                src={selectedModel.logo} 
-                alt={selectedModel.label}
-                className="w-4 h-4 object-contain"
-              />
+              <>
+                <img 
+                  src={selectedModel.logo} 
+                  alt={selectedModel.label}
+                  className="w-4 h-4 object-contain"
+                />
+                <StatusIndicator provider={selectedModel.value} />
+              </>
             )}
             <span className="text-xs text-gray-600 font-medium">
               {selectedModel?.label || "Modelo"}
@@ -98,11 +124,16 @@ export function ModelCombobox({ value, onValueChange }: ModelComboboxProps) {
                   }}
                 >
                   <div className="flex items-center gap-2">
-                    <img 
-                      src={model.logo} 
-                      alt={model.label}
-                      className="w-4 h-4 object-contain"
-                    />
+                    <div className="relative">
+                      <img 
+                        src={model.logo} 
+                        alt={model.label}
+                        className="w-4 h-4 object-contain"
+                      />
+                      <div className="absolute -top-0.5 -right-0.5">
+                        <StatusIndicator provider={model.value} />
+                      </div>
+                    </div>
                     {model.label}
                   </div>
                   <Check

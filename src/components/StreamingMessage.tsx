@@ -7,11 +7,13 @@ import MarkdownRenderer from './MarkdownRenderer';
 interface StreamingMessageProps {
   message: StreamingMessage;
   getModelIcon: (model?: string) => string;
+  modelUsed?: string;
 }
 
 export default function StreamingMessageComponent({ 
   message, 
-  getModelIcon 
+  getModelIcon,
+  modelUsed 
 }: StreamingMessageProps) {
   return (
     <div className="inline-block max-w-fit group">
@@ -29,9 +31,12 @@ export default function StreamingMessageComponent({
             <span className="text-xs text-gray-500 animate-pulse">...</span>
           </div>
        </div>
-       <MessageActions 
-         content={message.content}
-       />
+       {!message.isStreaming && (
+         <MessageActions 
+           content={message.content}
+           modelUsed={modelUsed}
+         />
+       )}
     </div>
   );
 }

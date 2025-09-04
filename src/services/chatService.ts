@@ -506,7 +506,14 @@ class ChatService {
       // Buscar preferências do usuário
       const userPreferences = await this.getUserPreferences(userId);
       const autoSaveEnabled = userPreferences?.auto_save_enabled ?? true;
-      const defaultModel = userPreferences?.default_model || preferredProvider || 'gpt-4o';
+      const defaultModel = preferredProvider || userPreferences?.default_model || 'gpt-4o';
+      
+      // DEBUG: Log para verificar o modelo
+      console.log('💾 PROCESS CHAT DEBUG:', {
+        preferredProvider,
+        userDefaultModel: userPreferences?.default_model,
+        finalDefaultModel: defaultModel
+      });
 
       // Se não há conversationId, criar nova conversa
       if (!conversationId) {
@@ -608,7 +615,14 @@ class ChatService {
       const userPreferences = await this.getUserPreferences(userId);
       const autoSaveEnabled = userPreferences?.auto_save_enabled ?? true;
       const streamingEnabled = userPreferences?.streaming_enabled ?? true;
-      const defaultModel = userPreferences?.default_model || preferredProvider || 'gpt-4o';
+      const defaultModel = preferredProvider || userPreferences?.default_model || 'gpt-4o';
+      
+      // DEBUG: Log para verificar o modelo
+      console.log('🌊 STREAM CHAT DEBUG:', {
+        preferredProvider,
+        userDefaultModel: userPreferences?.default_model,
+        finalDefaultModel: defaultModel
+      });
 
       // Configurar conversa (mesmo processo do chat normal)
       if (!conversationId) {

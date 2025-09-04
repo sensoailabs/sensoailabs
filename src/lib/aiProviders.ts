@@ -165,9 +165,46 @@ class AIProviderManager {
     }
   }
   
+  // Mapear modelo para provedor
+  private getProviderFromModel(model?: string): string | undefined {
+    if (!model) return undefined;
+    
+    // Mapeamento de modelos para provedores
+    const modelToProvider: Record<string, string> = {
+      'gpt-4o': 'openai',
+      'gpt-4o-mini': 'openai',
+      'gpt-4': 'openai',
+      'gpt-3.5-turbo': 'openai',
+      'claude-3-5-sonnet-20241022': 'anthropic',
+      'claude-3-5-haiku-20241022': 'anthropic',
+      'claude-3-opus-20240229': 'anthropic',
+      'gemini-2.0-flash-exp': 'google',
+      'gemini-1.5-pro': 'google',
+      'gemini-1.5-flash': 'google'
+    };
+    
+    return modelToProvider[model];
+  }
+
   private getProviderOrder(preferredProvider?: string): string[] {
-    if (preferredProvider && this.providers.includes(preferredProvider)) {
-      return [preferredProvider, ...this.providers.filter(p => p !== preferredProvider)];
+    // Primeiro, tentar mapear modelo para provedor
+    let actualProvider = preferredProvider;
+    if (preferredProvider && !this.providers.includes(preferredProvider)) {
+      actualProvider = this.getProviderFromModel(preferredProvider);
+    }
+    
+    // DEBUG: Log para verificar o mapeamento
+    console.log('🔄 PROVIDER ORDER DEBUG:', {
+      originalPreferred: preferredProvider,
+      mappedProvider: actualProvider,
+      availableProviders: this.providers,
+      finalOrder: actualProvider && this.providers.includes(actualProvider) 
+        ? [actualProvider, ...this.providers.filter(p => p !== actualProvider)]
+        : [...this.providers]
+    });
+    
+    if (actualProvider && this.providers.includes(actualProvider)) {
+      return [actualProvider, ...this.providers.filter(p => p !== actualProvider)];
     }
     return [...this.providers];
   }
@@ -209,7 +246,7 @@ class AIProviderManager {
     if (!this.openai) throw new Error('OpenAI not initialized');
     
     const response = await this.openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: messages.map(msg => ({
         role: msg.role,
         content: msg.content
@@ -229,7 +266,7 @@ class AIProviderManager {
     if (!this.openai) throw new Error('OpenAI not initialized');
     
     const stream = await this.openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: messages.map(msg => ({
         role: msg.role,
         content: msg.content
@@ -253,7 +290,7 @@ class AIProviderManager {
     yield {
       content: '',
       isComplete: true,
-      model: 'gpt-4o-mini'
+      model: 'gpt-4o'
     };
   }
   
@@ -261,7 +298,7 @@ class AIProviderManager {
     if (!this.anthropic) throw new Error('Anthropic not initialized');
     
     const response = await this.anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
+      model: 'claude-3-5-sonnet-20241022',
       max_tokens: 4000,
       messages: messages.filter(msg => msg.role !== 'system').map(msg => ({
         role: msg.role as 'user' | 'assistant',
@@ -284,7 +321,7 @@ class AIProviderManager {
     if (!this.anthropic) throw new Error('Anthropic not initialized');
     
     const stream = await this.anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
+      model: 'claude-3-5-sonnet-20241022',
       max_tokens: 4000,
       messages: messages.filter(msg => msg.role !== 'system').map(msg => ({
         role: msg.role as 'user' | 'assistant',
@@ -299,7 +336,7 @@ class AIProviderManager {
         yield {
           content: chunk.delta.text,
           isComplete: false,
-          model: 'claude-3-haiku-20240307'
+          model: 'claude-3-5-sonnet-20241022'
         };
       }
     }
@@ -307,14 +344,14 @@ class AIProviderManager {
     yield {
       content: '',
       isComplete: true,
-      model: 'claude-3-haiku-20240307'
+      model: 'claude-3-5-sonnet-20241022'
     };
   }
   
   private async chatWithGoogle(messages: AIMessage[]): Promise<AIResponse> {
     if (!this.googleAI) throw new Error('Google AI not initialized');
     
-    const model = this.googleAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = this.googleAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
     
     // Converter mensagens para formato do Google
     const history = messages.slice(0, -1).map(msg => ({
@@ -329,7 +366,7 @@ class AIProviderManager {
     
     return {
       content: result.response.text(),
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.0-flash-exp',
       tokenCount: result.response.usageMetadata?.totalTokenCount,
       processingTime: 0
     };
@@ -338,7 +375,7 @@ class AIProviderManager {
   private async *streamWithGoogle(messages: AIMessage[]): AsyncGenerator<StreamResponse> {
     if (!this.googleAI) throw new Error('Google AI not initialized');
     
-    const model = this.googleAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = this.googleAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
     
     const history = messages.slice(0, -1).map(msg => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
@@ -356,7 +393,7 @@ class AIProviderManager {
         yield {
           content: text,
           isComplete: false,
-          model: 'gemini-1.5-flash'
+          model: 'gemini-2.0-flash-exp'
         };
       }
     }
@@ -364,7 +401,7 @@ class AIProviderManager {
     yield {
       content: '',
       isComplete: true,
-      model: 'gemini-1.5-flash'
+      model: 'gemini-2.0-flash-exp'
     };
   }
   

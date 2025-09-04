@@ -26,7 +26,8 @@ export default {
   			'organic-drift': 'organic-drift 15s ease-in-out infinite 3s',
   			'organic-wave': 'organic-wave 25s ease-in-out infinite 7s',
   				'organic-edge': 'organic-edge 30s ease-in-out infinite 5s',
-        'smooth-fade-up': 'smooth-fade-up 1s cubic-bezier(0.22, 1, 0.36, 1) both'
+        'smooth-fade-up': 'smooth-fade-up 1s cubic-bezier(0.22, 1, 0.36, 1) both',
+        'border-beam': 'border-beam 15s linear infinite'
   		},
         keyframes: {
           'smooth-fade-up': {
@@ -39,6 +40,14 @@ export default {
               opacity: '1',
               transform: 'translateY(0) scale(1)',
               filter: 'blur(0)'
+            }
+          },
+          'border-beam': {
+            '0%': {
+              'offset-distance': '0%'
+            },
+            '100%': {
+              'offset-distance': '100%'
             }
           }
         },

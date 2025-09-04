@@ -41,6 +41,7 @@ export default function SensoChatPage() {
   const [hasFirstMessage, setHasFirstMessage] = useState(false);
   const [newMessageId, setNewMessageId] = useState<string | null>(null);
   const [refreshSidebar, setRefreshSidebar] = useState(0); // Trigger para atualizar sidebar
+  const [selectedModel, setSelectedModel] = useState('openai'); // Estado do modelo selecionado
   
   // Estados para paginação de mensagens
   const [currentPage, setCurrentPage] = useState(1);
@@ -109,6 +110,9 @@ export default function SensoChatPage() {
       
       setHasFirstMessage(true);
       
+      // Rolar para a mensagem mais recente após carregar
+      scrollToLatestMessage();
+      
       logger.info('Conversation selected:', {
         title: conversation.title,
         conversationId: conversation.id
@@ -154,6 +158,18 @@ export default function SensoChatPage() {
             behavior: 'smooth'
           });
         }
+      }
+    }, 150);
+  };
+
+  // Função para rolar para a mensagem mais recente (última mensagem)
+  const scrollToLatestMessage = () => {
+    setTimeout(() => {
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTo({
+          top: messagesContainerRef.current.scrollHeight,
+          behavior: 'smooth'
+        });
       }
     }, 150);
   };
@@ -260,17 +276,32 @@ export default function SensoChatPage() {
       return;
     }
 
+    // Obter o modelo original da mensagem que está sendo regenerada
+    const originalMessage = messages[messageIndex];
+    const originalModel = originalMessage?.model_used || selectedModel;
+
+    // DEBUG: Log para verificar o modelo
+    console.log('🔄 REGENERATE DEBUG:', {
+      messageIndex,
+      originalMessage: originalMessage?.model_used,
+      selectedModel,
+      finalModel: originalModel,
+      userMessage: userMessage.content.substring(0, 50)
+    });
+
     // Remover a mensagem da IA atual e todas as posteriores
     setMessages(prev => prev.slice(0, messageIndex));
 
-    // Reenviar a mensagem do usuário
+    // Reenviar a mensagem do usuário com o modelo original
     try {
       const chatRequest: ChatRequest = {
             message: userMessage.content,
             conversationId: currentConversation?.id,
             userId: currentUserId,
-            preferredProvider: 'gpt-4'
+            preferredProvider: originalModel
           };
+      
+      console.log('🚀 CHAT REQUEST:', chatRequest);
       
       startStreaming(chatRequest, (aiMessage) => {
         handleAIMessage(aiMessage);
@@ -333,7 +364,7 @@ export default function SensoChatPage() {
             {/* Conteúdo do chat com espaço condicional para input */}
             <div 
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto flex justify-center px-4 sm:px-6 lg:px-8" 
+              className="flex-1 overflow-y-auto flex justify-center px-4 sm:px-6 lg:px-8 mr-2" 
               style={{maxHeight: hasFirstMessage ? 'calc(100vh - 340px)' : 'calc(100vh - 200px)'}}
             >
                  <div className="w-full max-w-4xl" style={{paddingBottom: hasFirstMessage ? '20px' : '200px', minHeight: hasFirstMessage ? 'calc(100vh - 340px)' : 'calc(100vh - 200px)'}}>
@@ -420,6 +451,7 @@ export default function SensoChatPage() {
                             <MessageActions 
                                 content={message.content}
                                 onRegenerate={() => handleRegenerateMessage(idx)}
+                                modelUsed={message.model_used}
                               />
                           </>
                         )}
@@ -440,7 +472,7 @@ export default function SensoChatPage() {
                   {streamingMessage && (
                     <div className="flex items-start">
                       <div className="inline-block max-w-fit">
-                         <StreamingMessage message={streamingMessage} getModelIcon={(model?: string) => getProviderIcon(model || 'openai')} />
+                         <StreamingMessage message={streamingMessage} getModelIcon={(model?: string) => getProviderIcon(model || 'openai')} modelUsed={selectedModel} />
                       </div>
                     </div>
                   )}
@@ -460,6 +492,8 @@ export default function SensoChatPage() {
                      currentUserId={currentUserId || undefined}
                      isLoading={isLoading}
                      chatStreamHook={{ streamingMessage, isTyping, startStreaming, isStreaming, stopStreaming }}
+                     selectedModel={selectedModel}
+                     onModelChange={setSelectedModel}
                    />
                 </div>
               )}              
@@ -479,6 +513,8 @@ export default function SensoChatPage() {
                      currentUserId={currentUserId || undefined}
                      isLoading={isLoading}
                      chatStreamHook={{ streamingMessage, isTyping, startStreaming, isStreaming, stopStreaming }}
+                     selectedModel={selectedModel}
+                     onModelChange={setSelectedModel}
                    />
                 </div>
               </div>              

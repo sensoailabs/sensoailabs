@@ -1,10 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import {
   MessageCircle,
-  Search,
+  // Search removido - não utilizado
   Plus,
   ChevronRight,
   Folder,
@@ -31,16 +31,9 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { chatService, getUserConversationsPaginated, type Conversation } from "@/services/chatService"
+// Button removido - não utilizado
+// DropdownMenu removido - não utilizado
+import { getUserConversationsPaginated, type Conversation } from "@/services/chatService"
 import { useUser } from "@/contexts/UserContext"
 import logger from "@/lib/clientLogger"
 
@@ -162,18 +155,7 @@ export function SidebarChat({
       return dateB.getTime() - dateA.getTime()
     })
 
-  // Função para formatar data
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffTime = Math.abs(now.getTime() - date.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
-    if (diffDays === 1) return 'Hoje'
-    if (diffDays === 2) return 'Ontem'
-    if (diffDays <= 7) return `${diffDays} dias atrás`
-    return date.toLocaleDateString('pt-BR')
-  }
+  // Função formatDate removida - não utilizada
 
   // Função para lidar com novo chat
   const handleNewChat = () => {

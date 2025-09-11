@@ -1,5 +1,8 @@
 import { useState, useCallback, useRef } from "react"
 import type { DragEvent, ChangeEvent, InputHTMLAttributes } from "react"
+// Imports removidos - não utilizados
+// import { chatService } from '@/services/chatService'
+// import type { FileAttachment } from '@/services/chatService'
 
 type FileMetadata = {
   name: string
@@ -23,6 +26,8 @@ interface UseFileUploadOptions {
   initialFiles?: FileMetadata[]
   onFilesChange?: (files: FileWithPreview[]) => void
   onFilesAdded?: (addedFiles: FileWithPreview[]) => void
+  userId?: string
+  enableRealUpload?: boolean
 }
 
 export function formatBytes(bytes: number, decimals = 2): string {
@@ -41,13 +46,17 @@ export function useFileUpload({
   multiple = false,
   initialFiles = [],
   onFilesChange,
-  onFilesAdded
+  onFilesAdded,
+  userId,
+  enableRealUpload = false
 }: UseFileUploadOptions = {}) {
   const [files, setFiles] = useState<FileWithPreview[]>(
     initialFiles.map(file => ({ file, id: file.id }))
   )
   const [isDragging, setIsDragging] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
   const inputRef = useRef<HTMLInputElement>(null)
   const dragCounterRef = useRef(0)
 
@@ -156,6 +165,51 @@ export function useFileUpload({
     setErrors([])
   }, [])
 
+  // Função para fazer upload real dos arquivos
+  const uploadFiles = useCallback(async (): Promise<File[]> => {
+    if (!enableRealUpload || !userId || files.length === 0) {
+      return []
+    }
+
+    setIsUploading(true)
+    const uploadedFiles: File[] = []
+    const uploadErrors: string[] = []
+
+    try {
+      for (const fileWithPreview of files) {
+        if (fileWithPreview.file instanceof File) {
+          try {
+            setUploadProgress(prev => ({ ...prev, [fileWithPreview.id]: 0 }))
+            
+            // Validar se o arquivo tem tipo definido
+            if (!fileWithPreview.file.type) {
+              console.warn(`Arquivo ${fileWithPreview.file.name} não tem tipo MIME definido`)
+              uploadErrors.push(`Arquivo "${fileWithPreview.file.name}" não tem tipo válido`)
+              continue
+            }
+            
+            setUploadProgress(prev => ({ ...prev, [fileWithPreview.id]: 100 }))
+            
+            // Retornar o objeto File original para o chatService processar
+            uploadedFiles.push(fileWithPreview.file)
+          } catch (error) {
+            console.error(`Erro ao processar arquivo ${fileWithPreview.file.name}:`, error)
+            uploadErrors.push(`Falha no processamento de "${fileWithPreview.file.name}"`)
+          }
+        }
+      }
+    } finally {
+      setIsUploading(false)
+      setUploadProgress({})
+    }
+
+    if (uploadErrors.length > 0) {
+      setErrors(prev => [...prev, ...uploadErrors])
+    }
+
+    return uploadedFiles
+  }, [enableRealUpload, userId, files])
+
   const handleDragEnter = useCallback((e: DragEvent<HTMLElement>) => {
     e.preventDefault()
     e.stopPropagation()
@@ -213,12 +267,13 @@ export function useFileUpload({
   }), [accept, multiple, handleFileChange])
 
   return [
-    { files, isDragging, errors },
+    { files, isDragging, errors, isUploading, uploadProgress },
     {
       addFiles,
       removeFile,
       clearFiles,
       clearErrors,
+      uploadFiles,
       handleDragEnter,
       handleDragLeave,
       handleDragOver,

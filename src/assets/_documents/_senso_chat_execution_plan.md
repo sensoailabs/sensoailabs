@@ -171,71 +171,10 @@ Implementação completa da funcionalidade backend para o módulo Senso Chat, tr
    - Setup das variáveis de ambiente para APIs
    - Configuração inicial de logging e monitoramento
 
-2. **[MCP] Implementação da estrutura base de dados - Fase 1**
-   ```sql
-   -- ETAPA 1.1: Criação das tabelas principais
-   CREATE TABLE users (
-     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-     email VARCHAR(255) UNIQUE NOT NULL,
-     name VARCHAR(255),
-     avatar_url VARCHAR(500),
-     created_at TIMESTAMP DEFAULT NOW(),
-     updated_at TIMESTAMP DEFAULT NOW()
-   );
-
-   CREATE TABLE conversations (
-     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-     title VARCHAR(255) NOT NULL,
-     model_used VARCHAR(50) NOT NULL,
-     is_active BOOLEAN DEFAULT true,
-     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-     project_id UUID, -- Para fase 4
-     created_at TIMESTAMP DEFAULT NOW(),
-     updated_at TIMESTAMP DEFAULT NOW()
-   );
-
-   CREATE TABLE messages (
-     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-     conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
-     role VARCHAR(20) NOT NULL CHECK (role IN ('user', 'assistant')),
-     content TEXT NOT NULL,
-     file_attachments JSONB,
-     model_used VARCHAR(50),
-     token_count INTEGER,
-     processing_time FLOAT,
-     created_at TIMESTAMP DEFAULT NOW()
-   );
-   ```
-
-   - **[MCP] ETAPA 1.2: Configuração de índices de performance**
-   ```sql
-   -- Índices para otimização de queries
-   CREATE INDEX idx_conversations_user_id ON conversations(user_id);
-   CREATE INDEX idx_conversations_created_at ON conversations(created_at DESC);
-   CREATE INDEX idx_messages_conversation_id ON messages(conversation_id);
-   CREATE INDEX idx_messages_created_at ON messages(created_at);
-   CREATE INDEX idx_messages_role ON messages(role);
-   ```
-
-   - **[MCP] ETAPA 1.3: Row Level Security (RLS)**
-   ```sql
-   -- Habilitar RLS nas tabelas
-   ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
-   ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
-
-   -- Políticas de segurança
-   CREATE POLICY "Users can only access their own conversations" 
-   ON conversations FOR ALL 
-   USING (auth.uid() = user_id);
-
-   CREATE POLICY "Users can only access messages from their conversations" 
-   ON messages FOR ALL 
-   USING (
-     conversation_id IN (
-       SELECT id FROM conversations WHERE user_id = auth.uid()
-     )
-   );
-   ```
+2. **Implementação da estrutura base de dados**
+   - Criação das migrations Prisma para usuários, conversas e mensagens
+   - Configuração de Row Level Security (RLS) no Supabase
+   - Setup de índices para performance
 
 3. **Configuração das APIs de IA**
    - Integração com OpenAI SDK (GPT-4)
@@ -268,87 +207,10 @@ Implementação completa da funcionalidade backend para o módulo Senso Chat, tr
 ### **FASE 2: Persistência e Histórico (2-3 semanas)**
 
 #### Sprint 4: Estrutura de Dados (1 semana)
-8. **[MCP] Expansão do schema de banco - Fase 2**
-   ```sql
-   -- ETAPA 2.1: Configurações do sistema
-   CREATE TABLE model_configurations (
-     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-     model_name VARCHAR(50) UNIQUE NOT NULL,
-     display_name VARCHAR(100) NOT NULL,
-     provider VARCHAR(50) NOT NULL,
-     api_endpoint TEXT NOT NULL,
-     max_tokens INTEGER NOT NULL,
-     supports_files BOOLEAN DEFAULT false,
-     supported_file_types JSONB,
-     is_active BOOLEAN DEFAULT true,
-     is_default BOOLEAN DEFAULT false,
-     created_at TIMESTAMP DEFAULT NOW(),
-     updated_at TIMESTAMP DEFAULT NOW()
-   );
-
-   -- ETAPA 2.2: Logs de uso das APIs
-   CREATE TABLE api_usage_logs (
-     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-     user_id UUID NOT NULL,
-     conversation_id UUID,
-     message_id UUID,
-     model_used VARCHAR(50) NOT NULL,
-     request_type VARCHAR(20) NOT NULL,
-     tokens_used INTEGER NOT NULL,
-     response_time FLOAT NOT NULL,
-     success BOOLEAN DEFAULT true,
-     error_message TEXT,
-     timestamp TIMESTAMP DEFAULT NOW()
-   );
-
-   -- ETAPA 2.3: Preferências do usuário
-   CREATE TABLE user_preferences (
-     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-     user_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-     default_model VARCHAR(50) NOT NULL DEFAULT 'gpt-4',
-     auto_save_conversations BOOLEAN DEFAULT true,
-     max_history_length INTEGER DEFAULT 50,
-     enable_file_uploads BOOLEAN DEFAULT true,
-     preferred_theme VARCHAR(20) DEFAULT 'light',
-     created_at TIMESTAMP DEFAULT NOW(),
-     updated_at TIMESTAMP DEFAULT NOW()
-   );
-   ```
-
-   - **[MCP] ETAPA 2.4: Índices adicionais para performance**
-   ```sql
-   -- Índices para logs e configurações
-   CREATE INDEX idx_api_usage_logs_user_id ON api_usage_logs(user_id);
-   CREATE INDEX idx_api_usage_logs_model_used ON api_usage_logs(model_used);
-   CREATE INDEX idx_api_usage_logs_timestamp ON api_usage_logs(timestamp DESC);
-   CREATE INDEX idx_model_configurations_active ON model_configurations(is_active);
-   CREATE INDEX idx_model_configurations_default ON model_configurations(is_default);
-   ```
-
-   - **[MCP] ETAPA 2.5: Triggers para auditoria e timestamps**
-   ```sql
-   -- Função para atualizar updated_at
-   CREATE OR REPLACE FUNCTION update_updated_at_column()
-   RETURNS TRIGGER AS $
-   BEGIN
-     NEW.updated_at = NOW();
-     RETURN NEW;
-   END;
-   $ language 'plpgsql';
-
-   -- Triggers para updated_at
-   CREATE TRIGGER update_conversations_updated_at 
-     BEFORE UPDATE ON conversations 
-     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-   CREATE TRIGGER update_users_updated_at 
-     BEFORE UPDATE ON users 
-     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-   CREATE TRIGGER update_user_preferences_updated_at 
-     BEFORE UPDATE ON user_preferences 
-     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-   ```
+8. **Expansão do schema de banco**
+   - Refinamento das tabelas de conversas e mensagens
+   - Implementação de soft delete para conversas
+   - Configuração de backup automático
 
 9. **Sistema de títulos automáticos**
    - Geração automática de títulos usando IA
@@ -375,69 +237,10 @@ Implementação completa da funcionalidade backend para o módulo Senso Chat, tr
 ### **FASE 3: Funcionalidade Multimodal (3-4 semanas)**
 
 #### Sprint 7: Upload de Arquivos (1 semana)
-13. **[MCP] Sistema de arquivos - Fase 3**
-    ```sql
-    -- ETAPA 3.1: Tabela de anexos de arquivos
-    CREATE TABLE file_attachments (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-      message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
-      file_name VARCHAR(255) NOT NULL,
-      original_name VARCHAR(255) NOT NULL,
-      file_type VARCHAR(50) NOT NULL,
-      mime_type VARCHAR(100) NOT NULL,
-      file_size BIGINT NOT NULL,
-      file_path TEXT NOT NULL,
-      file_url TEXT NOT NULL,
-      image_metadata JSONB,
-      document_pages INTEGER,
-      uploaded_at TIMESTAMP DEFAULT NOW()
-    );
-
-    -- ETAPA 3.2: Índices para arquivos
-    CREATE INDEX idx_file_attachments_user_id ON file_attachments(user_id);
-    CREATE INDEX idx_file_attachments_conversation_id ON file_attachments(conversation_id);
-    CREATE INDEX idx_file_attachments_message_id ON file_attachments(message_id);
-    CREATE INDEX idx_file_attachments_file_type ON file_attachments(file_type);
-    CREATE INDEX idx_file_attachments_uploaded_at ON file_attachments(uploaded_at DESC);
-
-    -- ETAPA 3.3: RLS para arquivos
-    CREATE POLICY "Users can only access their own files" 
-    ON file_attachments FOR ALL 
-    USING (auth.uid() = user_id);
-    
-    ALTER TABLE file_attachments ENABLE ROW LEVEL SECURITY;
-    ```
-
-    - **[MCP] ETAPA 3.4: Configuração do Supabase Storage**
-    ```sql
-    -- Criação do bucket para arquivos
-    INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-    VALUES (
-      'senso-chat-files',
-      'senso-chat-files',
-      false,
-      52428800, -- 50MB
-      ARRAY['image/jpeg', 'image/png', 'image/gif', 'image/webp', 
-            'application/pdf', 'application/msword', 
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'text/plain']
-    );
-
-    -- Políticas de storage
-    CREATE POLICY "Users can upload their own files" 
-    ON storage.objects FOR INSERT 
-    WITH CHECK (bucket_id = 'senso-chat-files' AND auth.uid()::text = (storage.foldername(name))[1]);
-
-    CREATE POLICY "Users can view their own files" 
-    ON storage.objects FOR SELECT 
-    USING (bucket_id = 'senso-chat-files' AND auth.uid()::text = (storage.foldername(name))[1]);
-
-    CREATE POLICY "Users can delete their own files" 
-    ON storage.objects FOR DELETE 
-    USING (bucket_id = 'senso-chat-files' AND auth.uid()::text = (storage.foldername(name))[1]);
-    ```
+13. **Sistema de upload para Supabase Storage**
+    - Configuração de buckets seguros
+    - Validação de tipos de arquivo
+    - Integração com botão de upload do frontend
 
 14. **Processamento de metadados**
     - Extração de informações de imagens
@@ -464,106 +267,10 @@ Implementação completa da funcionalidade backend para o módulo Senso Chat, tr
 ### **FASE 4: Organização por Projetos (2-3 semanas)**
 
 #### Sprint 10: Sistema de Projetos (1 semana)
-18. **[MCP] Estrutura de projetos - Fase 4**
-    ```sql
-    -- ETAPA 4.1: Tabela de projetos
-    CREATE TABLE projects (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      name VARCHAR(255) NOT NULL,
-      description TEXT,
-      color VARCHAR(7), -- Código hex da cor
-      icon VARCHAR(50),
-      is_default BOOLEAN DEFAULT false,
-      created_at TIMESTAMP DEFAULT NOW(),
-      updated_at TIMESTAMP DEFAULT NOW()
-    );
-
-    -- ETAPA 4.2: Atualizar tabela de conversas para suportar projetos
-    -- (A coluna project_id já foi criada na Fase 1, agora criamos a foreign key)
-    ALTER TABLE conversations 
-    ADD CONSTRAINT fk_conversations_project_id 
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL;
-
-    -- ETAPA 4.3: Índices para projetos
-    CREATE INDEX idx_projects_user_id ON projects(user_id);
-    CREATE INDEX idx_projects_is_default ON projects(is_default);
-    CREATE INDEX idx_conversations_project_id ON conversations(project_id);
-
-    -- ETAPA 4.4: RLS para projetos
-    CREATE POLICY "Users can only access their own projects" 
-    ON projects FOR ALL 
-    USING (auth.uid() = user_id);
-    
-    ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
-
-    -- ETAPA 4.5: Trigger para updated_at em projetos
-    CREATE TRIGGER update_projects_updated_at 
-      BEFORE UPDATE ON projects 
-      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-    ```
-
-    - **[MCP] ETAPA 4.6: Dados iniciais do sistema**
-    ```sql
-    -- Inserir configurações padrão dos modelos
-    INSERT INTO model_configurations (model_name, display_name, provider, api_endpoint, max_tokens, supports_files, supported_file_types, is_active, is_default) VALUES
-    ('gpt-4', 'GPT-4', 'openai', 'https://api.openai.com/v1/chat/completions', 8192, true, '["image/jpeg", "image/png", "image/gif", "image/webp"]', true, true),
-    ('claude-3-sonnet', 'Claude 3 Sonnet', 'anthropic', 'https://api.anthropic.com/v1/messages', 200000, true, '["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf", "text/plain"]', true, false),
-    ('gemini-pro', 'Gemini Pro', 'google', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', 32768, true, '["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"]', true, false);
-
-    -- Função para criar projeto padrão para novos usuários
-    CREATE OR REPLACE FUNCTION create_default_project_for_user()
-    RETURNS TRIGGER AS $
-    BEGIN
-      INSERT INTO projects (user_id, name, description, is_default)
-      VALUES (NEW.id, 'Projeto Padrão', 'Projeto criado automaticamente para organizar suas conversas', true);
-      
-      INSERT INTO user_preferences (user_id)
-      VALUES (NEW.id);
-      
-      RETURN NEW;
-    END;
-    $ language 'plpgsql';
-
-    -- Trigger para criar projeto padrão
-    CREATE TRIGGER create_default_project_trigger
-      AFTER INSERT ON users
-      FOR EACH ROW EXECUTE FUNCTION create_default_project_for_user();
-    ```
-
-    - **[MCP] ETAPA 4.7: Views para relatórios e analytics**
-    ```sql
-    -- View para estatísticas de uso por usuário
-    CREATE VIEW user_chat_statistics AS
-    SELECT 
-      u.id as user_id,
-      u.email,
-      COUNT(DISTINCT c.id) as total_conversations,
-      COUNT(DISTINCT m.id) as total_messages,
-      COUNT(DISTINCT p.id) as total_projects,
-      COUNT(DISTINCT f.id) as total_files,
-      SUM(COALESCE(m.token_count, 0)) as total_tokens_used,
-      AVG(COALESCE(m.processing_time, 0)) as avg_response_time,
-      MAX(c.updated_at) as last_activity
-    FROM users u
-    LEFT JOIN conversations c ON u.id = c.user_id
-    LEFT JOIN messages m ON c.id = m.conversation_id
-    LEFT JOIN projects p ON u.id = p.user_id
-    LEFT JOIN file_attachments f ON u.id = f.user_id
-    GROUP BY u.id, u.email;
-
-    -- View para estatísticas de modelos
-    CREATE VIEW model_usage_statistics AS
-    SELECT 
-      model_used,
-      COUNT(*) as usage_count,
-      AVG(processing_time) as avg_processing_time,
-      SUM(token_count) as total_tokens,
-      COUNT(CASE WHEN success = false THEN 1 END) as error_count
-    FROM api_usage_logs
-    GROUP BY model_used
-    ORDER BY usage_count DESC;
-    ```
+18. **Estrutura de projetos**
+    - Implementação das tabelas de projetos
+    - Interface de criação e edição
+    - Sistema de cores e ícones
 
 19. **Agrupamento de conversas**
     - Associação de conversas a projetos
@@ -594,149 +301,12 @@ Implementação completa da funcionalidade backend para o módulo Senso Chat, tr
 
 ### **Atividades Transversais (Durante todas as fases)**
 
-24. **[MCP] Monitoramento e Logs - Database**
-    ```sql
-    -- ETAPA TRANSVERSAL 1: Tabela de eventos do sistema
-    CREATE TABLE system_events (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      event_type VARCHAR(50) NOT NULL,
-      user_id UUID,
-      conversation_id UUID,
-      event_data JSONB,
-      ip_address INET,
-      user_agent TEXT,
-      created_at TIMESTAMP DEFAULT NOW()
-    );
-
-    CREATE INDEX idx_system_events_type ON system_events(event_type);
-    CREATE INDEX idx_system_events_user_id ON system_events(user_id);
-    CREATE INDEX idx_system_events_created_at ON system_events(created_at DESC);
-
-    -- ETAPA TRANSVERSAL 2: Função para logging automático
-    CREATE OR REPLACE FUNCTION log_conversation_activity()
-    RETURNS TRIGGER AS $
-    BEGIN
-      IF TG_OP = 'INSERT' THEN
-        INSERT INTO system_events (event_type, user_id, conversation_id, event_data)
-        VALUES ('conversation_created', NEW.user_id, NEW.id, 
-                json_build_object('model_used', NEW.model_used, 'title', NEW.title));
-        RETURN NEW;
-      ELSIF TG_OP = 'UPDATE' THEN
-        INSERT INTO system_events (event_type, user_id, conversation_id, event_data)
-        VALUES ('conversation_updated', NEW.user_id, NEW.id, 
-                json_build_object('old_title', OLD.title, 'new_title', NEW.title));
-        RETURN NEW;
-      END IF;
-      RETURN NULL;
-    END;
-    $ language 'plpgsql';
-
-    CREATE TRIGGER log_conversation_activity_trigger
-      AFTER INSERT OR UPDATE ON conversations
-      FOR EACH ROW EXECUTE FUNCTION log_conversation_activity();
-    ```
-
-25. **[MCP] Segurança e Compliance - Database**
-    ```sql
-    -- ETAPA TRANSVERSAL 3: Auditoria de acesso a dados sensíveis
-    CREATE TABLE audit_log (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      table_name VARCHAR(50) NOT NULL,
-      operation VARCHAR(10) NOT NULL,
-      user_id UUID,
-      old_data JSONB,
-      new_data JSONB,
-      changed_at TIMESTAMP DEFAULT NOW()
-    );
-
-    -- Função genérica de auditoria
-    CREATE OR REPLACE FUNCTION audit_trigger_function()
-    RETURNS TRIGGER AS $
-    BEGIN
-      IF TG_OP = 'DELETE' THEN
-        INSERT INTO audit_log (table_name, operation, user_id, old_data)
-        VALUES (TG_TABLE_NAME, TG_OP, auth.uid(), row_to_json(OLD));
-        RETURN OLD;
-      ELSIF TG_OP = 'UPDATE' THEN
-        INSERT INTO audit_log (table_name, operation, user_id, old_data, new_data)
-        VALUES (TG_TABLE_NAME, TG_OP, auth.uid(), row_to_json(OLD), row_to_json(NEW));
-        RETURN NEW;
-      ELSIF TG_OP = 'INSERT' THEN
-        INSERT INTO audit_log (table_name, operation, user_id, new_data)
-        VALUES (TG_TABLE_NAME, TG_OP, auth.uid(), row_to_json(NEW));
-        RETURN NEW;
-      END IF;
-      RETURN NULL;
-    END;
-    $ language 'plpgsql';
-
-    -- Aplicar auditoria nas tabelas sensíveis
-    CREATE TRIGGER audit_conversations_trigger
-      AFTER INSERT OR UPDATE OR DELETE ON conversations
-      FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
-
-    CREATE TRIGGER audit_file_attachments_trigger
-      AFTER INSERT OR UPDATE OR DELETE ON file_attachments
-      FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
-    ```
-
-26. **[MCP] Performance e Otimização - Database**
-    ```sql
-    -- ETAPA TRANSVERSAL 4: Particionamento para logs (performance)
-    CREATE TABLE api_usage_logs_partitioned (
-      LIKE api_usage_logs INCLUDING ALL
-    ) PARTITION BY RANGE (timestamp);
-
-    -- Criar partições mensais
-    CREATE TABLE api_usage_logs_2025_08 PARTITION OF api_usage_logs_partitioned
-    FOR VALUES FROM ('2025-08-01') TO ('2025-09-01');
-
-    -- Função para criar partições automaticamente
-    CREATE OR REPLACE FUNCTION create_monthly_partition()
-    RETURNS void AS $
-    DECLARE
-      start_date date;
-      end_date date;
-      partition_name text;
-    BEGIN
-      start_date := date_trunc('month', CURRENT_DATE + interval '1 month');
-      end_date := start_date + interval '1 month';
-      partition_name := 'api_usage_logs_' || to_char(start_date, 'YYYY_MM');
-      
-      EXECUTE format('CREATE TABLE IF NOT EXISTS %I PARTITION OF api_usage_logs_partitioned
-                      FOR VALUES FROM (%L) TO (%L)',
-                     partition_name, start_date, end_date);
-    END;
-    $ language 'plpgsql';
-
-    -- ETAPA TRANSVERSAL 5: Limpeza automática de dados antigos
-    CREATE OR REPLACE FUNCTION cleanup_old_data()
-    RETURNS void AS $
-    BEGIN
-      -- Limpar logs de API antigos (> 6 meses)
-      DELETE FROM api_usage_logs 
-      WHERE timestamp < NOW() - INTERVAL '6 months';
-      
-      -- Limpar eventos de sistema antigos (> 3 meses)
-      DELETE FROM system_events 
-      WHERE created_at < NOW() - INTERVAL '3 months';
-      
-      -- Limpar logs de auditoria antigos (> 1 ano)
-      DELETE FROM audit_log 
-      WHERE changed_at < NOW() - INTERVAL '1 year';
-    END;
-    $ language 'plpgsql';
-
-    -- Agendar limpeza automática (requires pg_cron extension)
-    -- SELECT cron.schedule('cleanup-old-data', '0 2 1 * *', 'SELECT cleanup_old_data();');
-    ```
-
-24. **Monitoramento e Logs - Application**
+24. **Monitoramento e Logs**
     - Implementação de métricas de performance
     - Logs estruturados para debugging
     - Alertas para falhas críticas
 
-25. **Segurança e Compliance - Application**
+25. **Segurança e Compliance**
     - Revisões de segurança por sprint
     - Testes de penetração básicos
     - Documentação de conformidade
@@ -759,9 +329,11 @@ Implementação completa da funcionalidade backend para o módulo Senso Chat, tr
   - **[MCP]** Triggers de auditoria e timestamps funcionando
 
 - **Marco 3 (Fim da Fase 3):** 
-  - Funcionalidade multimodal totalmente implementada
-  - **[MCP]** Sistema de arquivos e Supabase Storage configurado
-  - **[MCP]** Políticas de segurança para arquivos ativas
+  - **Funcionalidade multimodal** totalmente implementada e testada
+  - **[MCP]** Sistema de arquivos simplificado e Supabase Storage configurado  
+  - **[MCP]** Integração funcional com GPT-4o, Claude 3.5 Sonnet e Gemini 2.0 Flash
+  - **Upload direto** e processamento multimodal sem falhas
+  - **Sistema de fallback** entre modelos multimodais operacional
 
 - **Marco 4 (Fim da Fase 4):** 
   - Sistema completo com organização por projetos

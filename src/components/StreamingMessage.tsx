@@ -1,4 +1,4 @@
-import React from 'react';
+// React import removido - não utilizado
 import type { StreamingMessage } from '@/hooks/useChatStream';
 import logoChatImg from '@/assets/logo-chat.png';
 import { MessageActions } from './MessageActions';
@@ -12,7 +12,7 @@ interface StreamingMessageProps {
 
 export default function StreamingMessageComponent({ 
   message, 
-  getModelIcon,
+  // getModelIcon removido - não utilizado
   modelUsed 
 }: StreamingMessageProps) {
   return (

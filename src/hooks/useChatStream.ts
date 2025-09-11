@@ -15,6 +15,7 @@ export const useChatStream = () => {
   const [streamingMessage, setStreamingMessage] = useState<StreamingMessage | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [wasCancelled, setWasCancelled] = useState(false);
 
   const startStreaming = useCallback(async (
     request: ChatRequest,
@@ -90,16 +91,33 @@ export const useChatStream = () => {
     }
   }, []);
 
-  const stopStreaming = useCallback(() => {
+  const stopStreaming = useCallback((onCancelled?: (cancelMessage: ChatMessage) => void) => {
+    setWasCancelled(true);
     setIsStreaming(false);
-    setStreamingMessage(null);
     setIsTyping(false);
+    
+    // Criar mensagem de cancelamento
+    const cancelMessage: ChatMessage = {
+      id: `cancelled-${Date.now()}`,
+      content: 'Geração interrompida pelo usuário',
+      role: 'assistant',
+      timestamp: new Date(),
+      isCancelled: true
+    };
+    
+    setStreamingMessage(null);
+    
+    // Notificar sobre o cancelamento
+    if (onCancelled) {
+      onCancelled(cancelMessage);
+    }
   }, []);
 
   return {
     streamingMessage,
     isStreaming,
     isTyping,
+    wasCancelled,
     startStreaming,
     stopStreaming
   };

@@ -1,12 +1,7 @@
 // Logger específico para o frontend (browser)
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 
-interface LogEntry {
-  level: LogLevel;
-  message: string;
-  data?: any;
-  timestamp: string;
-}
+// Interface removida - não utilizada
 
 class ClientLogger {
   private isDevelopment = import.meta.env.DEV;

@@ -19,26 +19,53 @@ const getProviderInfo = (model?: string) => {
   if (!model) return null;
   
   if (model.includes('gpt') || model.includes('openai')) {
+    let displayName = model;
+    
+    // Mapear modelos GPT para nomes amigáveis
+    if (model.includes('gpt-5-mini')) {
+      displayName = 'GPT-5 Mini';
+    } else if (model.includes('gpt-5-nano')) {
+      displayName = 'GPT-5 Nano';
+    } else if (model.includes('gpt-5-chat-latest')) {
+      displayName = 'GPT-5 Chat';
+    } else if (model === 'gpt-5') {
+      displayName = 'GPT-5';
+    } else if (model.includes('gpt-4o')) {
+      displayName = 'GPT-4o';
+    }
+    
     return {
       logo: gptLogo,
       name: 'OpenAI',
-      model: model.includes('gpt-4o') ? 'GPT-4o' : model
+      model: displayName
     };
   }
   
   if (model.includes('claude')) {
+    let displayName = model;
+    
+    if (model.includes('claude-3-5-sonnet')) {
+      displayName = 'Claude 3.5 Sonnet';
+    }
+    
     return {
       logo: claudeLogo,
       name: 'Anthropic',
-      model: model.includes('claude-3-5-sonnet') ? 'Claude 3.5 Sonnet' : model
+      model: displayName
     };
   }
   
   if (model.includes('gemini')) {
+    let displayName = model;
+    
+    if (model.includes('gemini-2.0-flash')) {
+      displayName = 'Gemini 2.0 Flash';
+    }
+    
     return {
       logo: geminiLogo,
       name: 'Google',
-      model: model.includes('gemini-2.0-flash') ? 'Gemini 2.0 Flash' : model
+      model: displayName
     };
   }
   

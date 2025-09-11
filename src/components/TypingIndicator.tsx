@@ -1,4 +1,4 @@
-import React from 'react';
+// React import removido - não utilizado
 import logoChatImg from '@/assets/logo-chat.png';
 
 interface TypingIndicatorProps {
@@ -6,7 +6,7 @@ interface TypingIndicatorProps {
   modelName?: string;
 }
 
-export default function TypingIndicator({ isVisible, modelName = 'Senso AI' }: TypingIndicatorProps) {
+export default function TypingIndicator({ isVisible }: TypingIndicatorProps) {
   if (!isVisible) return null;
 
   return (

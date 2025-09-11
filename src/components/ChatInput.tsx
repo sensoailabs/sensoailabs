@@ -1,16 +1,17 @@
-import React, { useState, useId, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+// import { Checkbox } from "@/components/ui/checkbox"; - removido, não utilizado
 import { ModelCombobox } from "@/components/ui/combobox";
 import { 
   Paperclip, 
   Telescope, 
   Globe, 
-  Send,
+  ArrowUp,
   Loader2,
   WandSparkles,
-  Undo2
+  Undo2,
+  CircleStop
 } from 'lucide-react';
 import { chatService } from '@/services/chatService';
 import logger from '@/lib/clientLogger';
@@ -42,7 +43,7 @@ export default function ChatInput({
   isLoading = false,
   enableStreaming = true,
   chatStreamHook,
-  selectedModel = 'openai',
+  selectedModel = 'gpt-4o',
   onModelChange
 }: ChatInputProps) {
   const [message, setMessage] = useState('');
@@ -50,37 +51,40 @@ export default function ChatInput({
   const [deepResearch, setDeepResearch] = useState(false);
   const [webSearch, setWebSearch] = useState(false);
 
-  const [investigateMode, setInvestigateMode] = useState(false);
+  // const [investigateMode, setInvestigateMode] = useState(false); - removido, não utilizado
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [originalText, setOriginalText] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
+  // const [isFocused, setIsFocused] = useState(false); - removido, não utilizado
   const defaultHook = useChatStream();
-  const { startStreaming, isStreaming, isTyping } = chatStreamHook || defaultHook;
-  const id = useId();
+  const { startStreaming, isStreaming, isTyping, stopStreaming } = chatStreamHook || defaultHook;
+  // const id = useId(); - removido, não utilizado
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   // Hook para upload de arquivos
   const [
-    { files, isDragging, errors },
+    { files, errors, isUploading },
     {
       removeFile,
       clearFiles,
       openFileDialog,
       getInputProps,
-      handleDragEnter,
-      handleDragLeave,
-      handleDragOver,
-      handleDrop
+      uploadFiles,
+      // handleDragEnter - removido, não utilizado
+      // handleDragLeave - removido, não utilizado
+      // handleDragOver - removido, não utilizado
+      // handleDrop - removido, não utilizado
     }
   ] = useFileUpload({
     multiple: true,
     maxFiles: 6,
     maxSize: 5 * 1024 * 1024, // 5MB
-    accept: "image/*,application/pdf,.doc,.docx,.txt,.zip,.rar"
+    accept: "image/*,application/pdf,.doc,.docx,.txt,.csv,.xls,.xlsx",
+    userId: currentUserId,
+    enableRealUpload: true
   });
   
-  const isProcessing = isSending || isStreaming || isLoading || isTyping;
+  const isProcessing = isSending || isStreaming || isLoading || isTyping || isUploading;
 
   // Auto-resize textarea
   useEffect(() => {
@@ -137,15 +141,22 @@ export default function ChatInput({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() && !isProcessing) {
+    if ((message.trim() || files.length > 0) && !isProcessing) {
       setIsSending(true);
       
       try {
-        const userMessage = message.trim();
+        const userMessage = message.trim() || '';
         setMessage('');
         
         if (!currentUserId) {
           throw new Error('Usuário não autenticado');
+        }
+        
+        // Fazer upload real dos arquivos se existirem
+        let uploadedFileAttachments: any[] = [];
+        if (files.length > 0) {
+          const uploadedFiles = await uploadFiles();
+          uploadedFileAttachments = uploadedFiles;
         }
         
         if (enableStreaming) {
@@ -154,7 +165,8 @@ export default function ChatInput({
             message: userMessage,
             conversationId: currentConversationId,
             userId: currentUserId,
-            preferredProvider: internalSelectedModel
+            preferredProvider: internalSelectedModel,
+            fileAttachments: uploadedFileAttachments.length > 0 ? uploadedFileAttachments : undefined
           }, (completedMessage) => {
             onMessageSent?.(completedMessage);
           }, (newConversation) => {
@@ -169,7 +181,8 @@ export default function ChatInput({
             message: userMessage,
             conversationId: currentConversationId,
             userId: currentUserId,
-            preferredProvider: internalSelectedModel
+            preferredProvider: internalSelectedModel,
+            fileAttachments: uploadedFileAttachments.length > 0 ? uploadedFileAttachments : undefined
           });
           
           // Buscar a mensagem da IA
@@ -184,6 +197,9 @@ export default function ChatInput({
             onConversationCreated?.(response.conversation);
           }
         }
+        
+        // Limpar campos após envio
+        clearFiles();
         
         logger.info('Chat message processed successfully', {
           conversationId: currentConversationId,
@@ -202,6 +218,7 @@ export default function ChatInput({
   };
 
   const getProcessingStatus = () => {
+    if (isUploading) return "Fazendo upload dos arquivos...";
     if (isTyping) return "IA está digitando...";
     if (isStreaming) return "Recebendo resposta...";
     if (isSending) return "Enviando mensagem...";
@@ -226,8 +243,6 @@ export default function ChatInput({
             <FileList
               files={files}
               onRemoveFile={removeFile}
-              onClearFiles={clearFiles}
-              onAddFiles={openFileDialog}
               errors={errors}
             />
           </div>
@@ -239,8 +254,7 @@ export default function ChatInput({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
+            // onFocus e onBlur removidos - setIsFocused não utilizado
             placeholder="Pergunte-me qualquer coisa..."
             className={`min-h-[24px] max-h-[300px] resize-none border-0 bg-transparent p-4 text-base placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 ${
                isOptimizing ? 'optimizing-text' : ''
@@ -354,19 +368,41 @@ export default function ChatInput({
                  )}
                </Button>
               
-              {/* Botão de envio */}
-              <Button
-                type="submit"
-                disabled={(!message.trim() && files.length === 0) || isProcessing}
-                className="h-8 w-8 p-0 bg-black hover:bg-gray-800 disabled:bg-gray-200 disabled:cursor-not-allowed rounded-lg"
-                title={isProcessing ? getProcessingStatus() : "Enviar mensagem"}
-              >
-                {isProcessing ? (
-                  <Loader2 className="w-4 h-4 text-white animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4 text-white" />
-                )}
-              </Button>
+              {/* Botão de envio/parar */}
+              {isStreaming || isTyping ? (
+                <Button
+                  type="button"
+                  onClick={() => stopStreaming((cancelMessage) => {
+                    // Exibir mensagem de cancelamento
+                    onMessageSent?.(cancelMessage);
+                  })}
+                  className="h-8 w-8 p-0 rounded-lg transition-colors"
+                  style={{
+                    background: 'linear-gradient(90deg, #4E67FF 0%, #4EAFFF 79.07%, #98D4F8 102.23%)'
+                  }}
+                  title="Parar geração"
+                >
+                  <CircleStop className="w-4 h-4 text-white" />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  disabled={(!message.trim() && files.length === 0) || isProcessing}
+                  className="h-8 w-8 p-0 disabled:bg-gray-200 disabled:cursor-not-allowed rounded-lg"
+                  style={{
+                    background: (!message.trim() && files.length === 0) || isProcessing 
+                      ? undefined 
+                      : 'linear-gradient(90deg, #4E67FF 0%, #4EAFFF 79.07%, #98D4F8 102.23%)'
+                  }}
+                  title={isProcessing ? getProcessingStatus() : "Enviar mensagem"}
+                >
+                  {isProcessing ? (
+                    <Loader2 className="w-4 h-4 text-white animate-spin" />
+                  ) : (
+                    <ArrowUp className="w-4 h-4 text-white" />
+                  )}
+                </Button>
+              )}
             </div>
           </div>
         </form>

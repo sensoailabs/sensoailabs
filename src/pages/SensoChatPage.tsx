@@ -3,7 +3,8 @@ import Header from '@/components/Header';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import ChatInput from '@/components/ChatInput';
 import LogoAnimated from '@/components/LogoAnimated';
-import { Bot, User } from 'lucide-react';
+import MessageFilePreview from '@/components/MessageFilePreview';
+import { User, CircleStop } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { SidebarChat } from '@/components/SidebarChat';
 import { MessageActions } from '@/components/MessageActions';
@@ -22,7 +23,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { chatService, getConversationMessagesPaginated } from '@/services/chatService';
+import { getConversationMessagesPaginated } from '@/services/chatService';
 import type { ChatMessage, Conversation, ChatRequest } from '@/services/chatService';
 import { useChatStream } from '@/hooks/useChatStream';
 import StreamingMessage from '@/components/StreamingMessage';
@@ -37,7 +38,7 @@ export default function SensoChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [hasFirstMessage, setHasFirstMessage] = useState(false);
   const [newMessageId, setNewMessageId] = useState<string | null>(null);
   const [refreshSidebar, setRefreshSidebar] = useState(0); // Trigger para atualizar sidebar
@@ -209,53 +210,7 @@ export default function SensoChatPage() {
     setMessages(prev => [...prev, message]);
   };
 
-  const handleMessageSent = async (content: string, conversationId?: string) => {
-    if (!currentUserId) {
-      logger.error('Usuário não autenticado');
-      return;
-    }
-
-    setIsLoading(true);
-    
-    // Ativar posicionamento fixo após primeira mensagem
-    if (!hasFirstMessage) {
-      setHasFirstMessage(true);
-    }
-    
-    try {
-      // Adicionar mensagem do usuário imediatamente
-       const userMessage: ChatMessage = {
-          id: Date.now().toString(),
-          content,
-          role: 'user',
-          conversation_id: conversationId || currentConversation?.id || ''
-        };
-      
-      setMessages(prev => [...prev, userMessage]);
-      
-      // Destacar nova mensagem
-      setNewMessageId(userMessage.id || null);
-      
-      // Iniciar streaming da resposta
-         const chatRequest: ChatRequest = {
-           message: content,
-           conversationId: conversationId || currentConversation?.id,
-           userId: currentUserId || '',
-           preferredProvider: 'gpt-4'
-         };
-         
-         startStreaming(chatRequest, (aiMessage) => {
-           handleAIMessage(aiMessage);
-         });
-         
-         const response = await chatService.saveMessage(userMessage);
-    } catch (error) {
-      logger.error('Erro ao enviar mensagem:', error);
-    } finally {
-      setIsLoading(false);
-      stopStreaming();
-    }
-  };
+  // Função handleMessageSent removida - não utilizada
 
   const handleConversationCreated = (conversation: Conversation) => {
     setCurrentConversation(conversation);
@@ -439,6 +394,9 @@ export default function SensoChatPage() {
                           <>
                             <div className="bg-[#F5F5F5] rounded-xl px-4 py-2 inline-block max-w-fit">
                               <p className="text-gray-800 whitespace-pre-wrap">{message.content}</p>
+                              {message.file_attachments && message.file_attachments.length > 0 && (
+                                <MessageFilePreview files={message.file_attachments} />
+                              )}
                             </div>
                             <UserMessageActions 
                               content={message.content}
@@ -447,12 +405,21 @@ export default function SensoChatPage() {
                           </>
                         ) : (
                           <>
-                            <MarkdownRenderer content={message.content} />
-                            <MessageActions 
-                                content={message.content}
-                                onRegenerate={() => handleRegenerateMessage(idx)}
-                                modelUsed={message.model_used}
-                              />
+                            {message.isCancelled ? (
+                              <div className="flex items-center gap-2 text-gray-500 italic">
+                                <CircleStop className="w-4 h-4" />
+                                <span>Geração interrompida pelo usuário</span>
+                              </div>
+                            ) : (
+                              <>
+                                <MarkdownRenderer content={message.content} />
+                                <MessageActions 
+                                    content={message.content}
+                                    onRegenerate={() => handleRegenerateMessage(idx)}
+                                    modelUsed={message.model_used}
+                                  />
+                              </>
+                            )}
                           </>
                         )}
                       </div>

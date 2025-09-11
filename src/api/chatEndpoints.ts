@@ -1,5 +1,5 @@
 // APIs REST para funcionalidades de chat e conversas
-import { supabase } from '../lib/supabase';
+// import { supabase } from '../lib/supabase'; - removido, não utilizado
 import { 
   getUserConversations,
   getUserConversationsPaginated,
@@ -9,7 +9,7 @@ import {
   getConversationContext,
   deleteConversation,
   processChat,
-  processChatStream,
+  // processChatStream - removido, não utilizado
   getActiveModelConfigurations,
   getUserPreferences,
   updateUserPreferences,

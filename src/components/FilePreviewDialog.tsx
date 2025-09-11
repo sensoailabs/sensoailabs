@@ -1,14 +1,14 @@
 "use client"
 
-import { useState } from "react"
+// import { useState } from "react" - removido, não utilizado
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { X, FileIcon } from "lucide-react"
+// import { Button } from "@/components/ui/button" - removido, não utilizado
+import { FileIcon } from "lucide-react"
 import { formatBytes } from "@/hooks/use-file-upload"
 
 interface FilePreviewDialogProps {
@@ -40,7 +40,7 @@ const getFileUrl = (file: File | { type: string; name: string; url?: string }) =
   if (file instanceof File) {
     return URL.createObjectURL(file)
   }
-  return file.url || ''
+  return file.url && file.url.trim() !== '' ? file.url : null
 }
 
 export default function FilePreviewDialog({
@@ -58,6 +58,14 @@ export default function FilePreviewDialog({
   const renderPreview = () => {
     switch (fileType) {
       case 'image':
+        if (!fileUrl) {
+          return (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <FileIcon className="w-16 h-16 text-gray-400" />
+              <p className="text-sm text-gray-500">Imagem não disponível</p>
+            </div>
+          )
+        }
         return (
           <div className="flex items-center justify-center max-h-[70vh] overflow-hidden">
             <img
@@ -69,6 +77,14 @@ export default function FilePreviewDialog({
         )
       
       case 'pdf':
+        if (!fileUrl) {
+          return (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <FileIcon className="w-16 h-16 text-gray-400" />
+              <p className="text-sm text-gray-500">PDF não disponível</p>
+            </div>
+          )
+        }
         return (
           <div className="h-[70vh] w-full">
             <iframe

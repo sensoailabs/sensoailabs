@@ -19,6 +19,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { isApiConfigured } from "@/lib/apiHealthCheck"
+import { getProviderFromModel } from "@/lib/aiProviders"
 
 // Importando os logos dos modelos
 import gptLogo from "@/assets/_icons-model-ai/gpt.svg"
@@ -27,20 +28,40 @@ import geminiLogo from "@/assets/_icons-model-ai/gemini.svg"
 
 const models = [
   {
-    value: "openai",
+    value: "gpt-4o",
     label: "GPT-4o",
     logo: "/src/assets/_icons-model-ai/gpt.svg"
   },
   {
-    value: "anthropic",
-    label: "Claude 3.5 Sonnet",
-    logo: "/src/assets/_icons-model-ai/claude.svg"
+    value: "gpt-5",
+    label: "GPT-5",
+    logo: "/src/assets/_icons-model-ai/gpt.svg"
   },
   {
-    value: "google",
-    label: "Gemini 2.0 Flash",
-    logo: "/src/assets/_icons-model-ai/gemini.svg"
-  }
+    value: "gpt-5-chat-latest",
+    label: "GPT-5 Chat",
+    logo: "/src/assets/_icons-model-ai/gpt.svg"
+  },
+  {
+    value: "gpt-5-nano",
+    label: "GPT-5 Nano",
+    logo: "/src/assets/_icons-model-ai/gpt.svg"
+  },
+  {
+    value: "gpt-5-mini",
+    label: "GPT-5 Mini",
+    logo: "/src/assets/_icons-model-ai/gpt.svg"
+  },
+  {
+      value: "claude-3-5-sonnet-20241022",
+      label: "Claude 3.5 Sonnet",
+      logo: "/src/assets/_icons-model-ai/claude.svg"
+    },
+    {
+      value: "gemini-2.0-flash-exp",
+      label: "Gemini 2.0 Flash",
+      logo: "/src/assets/_icons-model-ai/gemini.svg"
+    }
 ]
 
 interface ModelComboboxProps {
@@ -49,7 +70,8 @@ interface ModelComboboxProps {
 }
 
 // Componente para indicador de status
-function StatusIndicator({ provider }: { provider: string }) {
+function StatusIndicator({ model }: { model: string }) {
+  const provider = getProviderFromModel(model)
   const isConfigured = isApiConfigured(provider)
   
   const getStatusColor = () => {
@@ -98,7 +120,7 @@ export function ModelCombobox({ value, onValueChange }: ModelComboboxProps) {
                   alt={selectedModel.label}
                   className="w-4 h-4 object-contain"
                 />
-                <StatusIndicator provider={selectedModel.value} />
+                <StatusIndicator model={selectedModel.value} />
               </>
             )}
             <span className="text-xs text-gray-600 font-medium">
@@ -131,7 +153,7 @@ export function ModelCombobox({ value, onValueChange }: ModelComboboxProps) {
                         className="w-4 h-4 object-contain"
                       />
                       <div className="absolute -top-0.5 -right-0.5">
-                        <StatusIndicator provider={model.value} />
+                        <StatusIndicator model={model.value} />
                       </div>
                     </div>
                     {model.label}

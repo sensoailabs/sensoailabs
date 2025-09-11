@@ -7,10 +7,10 @@ import {
   FileIcon,
   FileSpreadsheetIcon,
   FileTextIcon,
-  HeadphonesIcon,
+  // HeadphonesIcon - removido, não utilizado
   ImageIcon,
-  Trash2Icon,
-  VideoIcon,
+  // Trash2Icon - removido, não utilizado
+  // VideoIcon - removido, não utilizado
   XIcon,
   FileImageIcon,
   FileMusicIcon,
@@ -19,27 +19,14 @@ import {
 } from "lucide-react"
 
 import {
-  formatBytes,
+  // formatBytes - removido, não utilizado
   useFileUpload,
 } from "@/hooks/use-file-upload"
 import { Button } from "@/components/ui/button"
 import FilePreviewDialog from "@/components/FilePreviewDialog"
-import type { DragEvent } from "react"
+// import type { DragEvent } from "react" - removido, não utilizado
 
-interface FileListProps {
-  files: ReturnType<typeof useFileUpload>[0]['files']
-  onRemoveFile: (id: string) => void
-  onClearFiles: () => void
-  onAddFiles: () => void
-  errors: string[]
-  maxFiles?: number
-  maxSizeMB?: number
-  onDragEnter?: (e: DragEvent<HTMLElement>) => void
-  onDragLeave?: (e: DragEvent<HTMLElement>) => void
-  onDragOver?: (e: DragEvent<HTMLElement>) => void
-  onDrop?: (e: DragEvent<HTMLElement>) => void
-  isDragging?: boolean
-}
+// interface FileListProps removida - não utilizada
 
 const getFileIcon = (file: { file: File | { type: string; name: string } }) => {
   const fileType = file.file instanceof File ? file.file.type : file.file.type
@@ -70,7 +57,7 @@ const getFileIcon = (file: { file: File | { type: string; name: string } }) => {
     },
     excel: {
       icon: FileSpreadsheetIcon,
-      conditions: (type: string, name: string, ext?: string) =>
+      conditions: (type: string, _name: string, ext?: string) =>
         type.includes("excel") ||
         type.includes("spreadsheet") ||
         ['xlsx', 'xls', 'csv'].includes(ext || ''),
@@ -78,7 +65,7 @@ const getFileIcon = (file: { file: File | { type: string; name: string } }) => {
     },
     document: {
       icon: FileTextIcon,
-      conditions: (type: string, name: string, ext?: string) =>
+      conditions: (type: string, _name: string, ext?: string) =>
         type.includes("word") ||
         type.includes("document") ||
         ['doc', 'docx', 'txt', 'rtf'].includes(ext || ''),
@@ -86,13 +73,13 @@ const getFileIcon = (file: { file: File | { type: string; name: string } }) => {
     },
     code: {
       icon: FileCodeIcon,
-      conditions: (type: string, name: string, ext?: string) =>
+      conditions: (_type: string, _name: string, ext?: string) =>
         ['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'json', 'xml', 'py', 'java', 'cpp', 'c'].includes(ext || ''),
       color: "text-yellow-600"
     },
     archive: {
       icon: FileArchiveIcon,
-      conditions: (type: string, name: string, ext?: string) =>
+      conditions: (type: string, _name: string, ext?: string) =>
         type.includes("zip") ||
         type.includes("archive") ||
         ['zip', 'rar', '7z', 'tar', 'gz'].includes(ext || ''),
@@ -156,17 +143,12 @@ const getFilePreview = (file: {
 export default function FileList({
   files,
   onRemoveFile,
-  onClearFiles,
-  onAddFiles,
-  errors,
-  maxFiles = 6,
-  maxSizeMB = 5,
-  onDragEnter,
-  onDragLeave,
-  onDragOver,
-  onDrop,
-  isDragging = false
-}: FileListProps) {
+  errors = []
+}: {
+  files: ReturnType<typeof useFileUpload>[0]['files']
+  onRemoveFile: (id: string) => void
+  errors?: string[]
+}) {
   const [selectedFile, setSelectedFile] = useState<typeof files[0] | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 

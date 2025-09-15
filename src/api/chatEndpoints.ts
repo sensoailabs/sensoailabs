@@ -3,9 +3,11 @@
 import { 
   getUserConversations,
   getUserConversationsPaginated,
+  getUserConversationsPaginatedLegacy,
   searchUserConversations,
   getConversationMessages,
   getConversationMessagesPaginated,
+  getConversationMessagesPaginatedLegacy,
   getConversationContext,
   deleteConversation,
   processChat,
@@ -84,8 +86,41 @@ export const getConversationsEndpoint = async (
   }
 };
 
-// ENDPOINT: GET /api/chat/conversations/paginated
+// ENDPOINT: GET /api/chat/conversations/paginated (cursor-based)
 export const getConversationsPaginatedEndpoint = async (
+  userId: string,
+  cursor?: string,
+  limit: number = 20
+): Promise<{ status: number; data: { conversations: Conversation[]; nextCursor?: string; hasMore: boolean } | ErrorResponse }> => {
+  try {
+    if (!userId) {
+      return {
+        status: 400,
+        data: { error: 'ID do usuário é obrigatório' }
+      };
+    }
+
+    const result = await getUserConversationsPaginated(userId, cursor, limit);
+    
+    return {
+       status: 200,
+       data: {
+         conversations: result.conversations,
+         nextCursor: result.nextCursor,
+         hasMore: result.hasMore
+       }
+     };
+  } catch (error) {
+    console.error('Erro no endpoint getConversationsPaginated:', error);
+    return {
+      status: 500,
+      data: { error: 'Erro interno do servidor' }
+    };
+  }
+};
+
+// ENDPOINT: GET /api/chat/conversations/paginated/legacy (offset-based para compatibilidade)
+export const getConversationsPaginatedLegacyEndpoint = async (
   userId: string,
   page: number = 1,
   limit: number = 20
@@ -98,7 +133,7 @@ export const getConversationsPaginatedEndpoint = async (
       };
     }
 
-    const result = await getUserConversationsPaginated(userId, page, limit);
+    const result = await getUserConversationsPaginatedLegacy(userId, page, limit);
     
     return {
        status: 200,
@@ -110,7 +145,7 @@ export const getConversationsPaginatedEndpoint = async (
        }
      };
   } catch (error) {
-    console.error('Erro no endpoint getConversationsPaginated:', error);
+    console.error('Erro no endpoint getConversationsPaginatedLegacy:', error);
     return {
       status: 500,
       data: { error: 'Erro interno do servidor' }
@@ -187,8 +222,44 @@ export const getConversationMessagesEndpoint = async (
   }
 };
 
-// ENDPOINT: GET /api/chat/conversation/:id/messages/paginated
+// ENDPOINT: GET /api/chat/conversation/:id/messages/paginated (cursor-based)
 export const getConversationMessagesPaginatedEndpoint = async (
+  conversationId: string,
+  cursor?: string,
+  limit: number = 50,
+  direction: 'forward' | 'backward' = 'backward'
+): Promise<{ status: number; data: { messages: ChatMessage[]; nextCursor?: string; prevCursor?: string; hasMore: boolean; hasPrev: boolean } | ErrorResponse }> => {
+  try {
+    if (!conversationId) {
+      return {
+        status: 400,
+        data: { error: 'ID da conversa é obrigatório' }
+      };
+    }
+
+    const result = await getConversationMessagesPaginated(conversationId, cursor, limit, direction);
+    
+    return {
+      status: 200,
+      data: {
+        messages: result.messages,
+        nextCursor: result.nextCursor,
+        prevCursor: result.prevCursor,
+        hasMore: result.hasMore,
+        hasPrev: result.hasPrev
+      }
+    };
+  } catch (error) {
+    console.error('Erro no endpoint getConversationMessagesPaginated:', error);
+    return {
+      status: 500,
+      data: { error: 'Erro interno do servidor' }
+    };
+  }
+};
+
+// ENDPOINT: GET /api/chat/conversation/:id/messages/paginated/legacy (offset-based para compatibilidade)
+export const getConversationMessagesPaginatedLegacyEndpoint = async (
   conversationId: string,
   page: number = 1,
   limit: number = 50
@@ -201,7 +272,7 @@ export const getConversationMessagesPaginatedEndpoint = async (
       };
     }
 
-    const result = await getConversationMessagesPaginated(conversationId, page, limit);
+    const result = await getConversationMessagesPaginatedLegacy(conversationId, page, limit);
     
     return {
       status: 200,
@@ -213,7 +284,7 @@ export const getConversationMessagesPaginatedEndpoint = async (
       }
     };
   } catch (error) {
-    console.error('Erro no endpoint getConversationMessagesPaginated:', error);
+    console.error('Erro no endpoint getConversationMessagesPaginatedLegacy:', error);
     return {
       status: 500,
       data: { error: 'Erro interno do servidor' }

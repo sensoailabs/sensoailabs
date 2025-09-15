@@ -30,7 +30,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
-import { Input } from "@/components/ui/input"
+// Input removido - campo de busca não é mais exibido
 // Button removido - não utilizado
 // DropdownMenu removido - não utilizado
 import { getUserConversationsPaginated, type Conversation } from "@/services/chatService"
@@ -91,22 +91,20 @@ export function SidebarChat({
 }: SidebarChatProps) {
   const { userData } = useUser()
   const [conversations, setConversations] = useState<Conversation[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [nextCursor, setNextCursor] = useState<string | undefined>(undefined)
   const [hasMore, setHasMore] = useState(true)
-  const [totalCount, setTotalCount] = useState(0)
 
 
-  // Carregar conversas do usuário com paginação
-  const loadConversations = async (page: number = 1, reset: boolean = false): Promise<void> => {
+  // Carregar conversas do usuário com cursor-based pagination
+  const loadConversations = async (cursor?: string, reset: boolean = false): Promise<void> => {
     if (!userData?.id) {
       return Promise.resolve()
     }
     
     setIsLoading(true)
     try {
-      const result = await getUserConversationsPaginated(userData.id, page, 20)
+      const result = await getUserConversationsPaginated(userData.id, cursor, 20)
       
       if (reset) {
         setConversations(result.conversations)
@@ -115,8 +113,7 @@ export function SidebarChat({
       }
       
       setHasMore(result.hasMore)
-      setTotalCount(result.totalCount)
-      setCurrentPage(result.currentPage)
+      setNextCursor(result.nextCursor)
     } catch (error) {
       console.error('Erro ao carregar conversas:', error)
       logger.error('Erro ao carregar conversas:', error)
@@ -127,26 +124,22 @@ export function SidebarChat({
 
   // Carregar mais conversas (apenas adiciona novos itens)
   const loadMoreConversations = () => {
-    if (!isLoading && hasMore) {
-      loadConversations(currentPage + 1, false)
+    if (!isLoading && hasMore && nextCursor) {
+      loadConversations(nextCursor, false)
     }
   }
 
   // Efeito para carregar conversas iniciais
   useEffect(() => {
-    setCurrentPage(1)
+    setNextCursor(undefined)
     setHasMore(true)
-    loadConversations(1, true)
+    loadConversations(undefined, true)
   }, [userData?.id, refreshTrigger])
 
 
 
-  // Filtrar conversas
+  // Ordenar conversas (mais recentes primeiro)
   const filteredConversations = conversations
-    .filter(conversation => {
-      // Filtro por texto
-      return conversation.title.toLowerCase().includes(searchTerm.toLowerCase())
-    })
     .sort((a, b) => {
       const dateA = new Date(a.updated_at || a.created_at || '')
       const dateB = new Date(b.updated_at || b.created_at || '')
@@ -186,20 +179,7 @@ export function SidebarChat({
                 <span>Novo chat</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem className="animate-smooth-fade-up" style={{ animationDelay: '240ms' }}>
-              <div className="px-2 space-y-2">
-                <div className="flex gap-1">
-                  <Input
-                    type="text"
-                    placeholder="Buscar em chats..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="h-8 flex-1"
-                  />
-                </div>
-
-              </div>
-            </SidebarMenuItem>
+            {/* Campo de busca removido */}
           </SidebarMenu>
         </SidebarGroup>
 
@@ -266,7 +246,7 @@ export function SidebarChat({
               <SidebarMenuItem>
                 <SidebarMenuButton disabled>
                   <span className="text-muted-foreground">
-                    {searchTerm ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa ainda'}
+                    {'Nenhuma conversa ainda'}
                   </span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -292,7 +272,7 @@ export function SidebarChat({
             )}
             
             {/* Botão Carregar Mais */}
-            {!searchTerm && hasMore && !isLoading && filteredConversations.length > 0 && (
+            {hasMore && !isLoading && filteredConversations.length > 0 && (
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   onClick={loadMoreConversations}
@@ -314,10 +294,10 @@ export function SidebarChat({
             )}
             
             {/* Contador de conversas */}
-            {!searchTerm && totalCount > 0 && (
+            {conversations.length > 0 && (
               <SidebarMenuItem>
                 <div className="px-2 py-1 text-xs text-muted-foreground text-center">
-                  {conversations.length} de {totalCount} conversas
+                  {conversations.length} conversas carregadas
                 </div>
               </SidebarMenuItem>
             )}

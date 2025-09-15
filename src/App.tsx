@@ -55,7 +55,7 @@ function App() {
             element={isAuthenticated ? <HomePage /> : <Navigate to="/login" />} 
           />
           <Route 
-            path="/chat" 
+            path="/chat/:conversationId?" 
             element={isAuthenticated ? <SensoChatPage /> : <Navigate to="/login" />} 
           />
           <Route 

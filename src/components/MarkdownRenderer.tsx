@@ -3,6 +3,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkGfm from 'remark-gfm';
 import remarkEmoji from 'remark-emoji';
+import { useDebounce } from '../hooks/useDebounce';
 
 interface MarkdownRendererProps {
   content: string;
@@ -10,6 +11,8 @@ interface MarkdownRendererProps {
 }
 
 export default function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
+  // Debounce do conteúdo para otimizar performance durante streaming
+  const debouncedContent = useDebounce(content, 100);
   return (
     <div className={`markdown-content ${className}`}>
       <ReactMarkdown
@@ -156,7 +159,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
           ),
         }}
       >
-        {content}
+        {debouncedContent}
       </ReactMarkdown>
     </div>
   );

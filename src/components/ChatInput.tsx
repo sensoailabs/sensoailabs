@@ -3,16 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 // import { Checkbox } from "@/components/ui/checkbox"; - removido, não utilizado
 import { ModelCombobox } from "@/components/ui/combobox";
+import UploadErrorBoundary from "@/components/ui/upload-error-boundary";
 import { 
   Paperclip, 
   Telescope, 
   Globe, 
   ArrowUp,
-  Loader2,
   WandSparkles,
   Undo2,
   CircleStop
 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { chatService } from '@/services/chatService';
 import logger from '@/lib/clientLogger';
 import type { ChatMessage, Conversation } from '@/services/chatService';
@@ -146,7 +147,10 @@ export default function ChatInput({
       
       try {
         const userMessage = message.trim() || '';
+        
+        // Limpar campos imediatamente para melhor UX
         setMessage('');
+        clearFiles();
         
         if (!currentUserId) {
           throw new Error('Usuário não autenticado');
@@ -198,9 +202,6 @@ export default function ChatInput({
           }
         }
         
-        // Limpar campos após envio
-        clearFiles();
-        
         logger.info('Chat message processed successfully', {
           conversationId: currentConversationId,
           model: internalSelectedModel,
@@ -240,11 +241,26 @@ export default function ChatInput({
         {/* Lista de arquivos selecionados */}
         {files.length > 0 && (
           <div className="border-b border-gray-100">
-            <FileList
-              files={files}
+            <UploadErrorBoundary
+              onRetryUpload={() => {
+                // Retry do upload - reabrir dialog de seleção
+                openFileDialog();
+              }}
+              onCancelUpload={() => {
+                // Limpar todos os arquivos
+                files.forEach(file => removeFile(file.id));
+              }}
               onRemoveFile={removeFile}
-              errors={errors}
-            />
+              uploadProgress={isUploading ? 50 : undefined}
+              fileName={files[0]?.file?.name}
+              fileSize={files[0]?.file?.size}
+            >
+              <FileList
+                files={files}
+                onRemoveFile={removeFile}
+                errors={errors}
+              />
+            </UploadErrorBoundary>
           </div>
         )}
         <form onSubmit={handleSubmit} className="flex flex-col">
@@ -360,7 +376,7 @@ export default function ChatInput({
                  disabled={!message.trim() || isOptimizing}
                >
                  {isOptimizing ? (
-                   <Loader2 className="w-4 h-4 text-gray-500 animate-spin" />
+                   <Spinner size="sm" className="text-gray-500" />
                  ) : originalText ? (
                    <Undo2 className="w-4 h-4 text-gray-500" />
                  ) : (
@@ -397,7 +413,7 @@ export default function ChatInput({
                   title={isProcessing ? getProcessingStatus() : "Enviar mensagem"}
                 >
                   {isProcessing ? (
-                    <Loader2 className="w-4 h-4 text-white animate-spin" />
+                    <Spinner size="sm" className="text-white" />
                   ) : (
                     <ArrowUp className="w-4 h-4 text-white" />
                   )}

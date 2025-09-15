@@ -27,9 +27,6 @@ export const useChatStream = () => {
       setIsTyping(true);
       setIsStreaming(true);
       
-      // Simular delay de digitando antes de começar o streaming
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
       setIsTyping(false);
       
       // Criar mensagem de streaming inicial
@@ -102,7 +99,8 @@ export const useChatStream = () => {
       content: 'Geração interrompida pelo usuário',
       role: 'assistant',
       timestamp: new Date(),
-      isCancelled: true
+      isCancelled: true,
+      conversation_id: ''
     };
     
     setStreamingMessage(null);

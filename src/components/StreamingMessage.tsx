@@ -3,6 +3,7 @@ import type { StreamingMessage } from '@/hooks/useChatStream';
 import logoChatImg from '@/assets/logo-chat.png';
 import { MessageActions } from './MessageActions';
 import MarkdownRenderer from './MarkdownRenderer';
+import { Spinner } from '@/components/ui/spinner';
 
 interface StreamingMessageProps {
   message: StreamingMessage;
@@ -21,14 +22,20 @@ export default function StreamingMessageComponent({
         <MarkdownRenderer content={message.content} />
       </div>
       <div className="flex items-center gap-2">
-         <img 
-           src={logoChatImg} 
-           alt="IA criando..." 
-           className="w-4 h-4 opacity-70 animate-pulse"
-         />
+         {message.isStreaming ? (
+           <Spinner size="sm" className="opacity-70" />
+         ) : (
+           <img 
+             src={logoChatImg} 
+             alt="IA" 
+             className="w-4 h-4 opacity-70"
+           />
+         )}
          <div className="flex items-center gap-1">
             <span className=" text-gray-500">Senso AI</span>
-            <span className="text-xs text-gray-500 animate-pulse">...</span>
+            {message.isStreaming && (
+              <span className="text-xs text-gray-500">digitando...</span>
+            )}
           </div>
        </div>
        {!message.isStreaming && (

@@ -22,9 +22,9 @@ import { isApiConfigured } from "@/lib/apiHealthCheck"
 import { getProviderFromModel } from "@/lib/aiProviders"
 
 // Importando os logos dos modelos
-import gptLogo from "@/assets/_icons-model-ai/gpt.svg"
-import claudeLogo from "@/assets/_icons-model-ai/claude.svg"
-import geminiLogo from "@/assets/_icons-model-ai/gemini.svg"
+// import gptLogo from "@/assets/_icons-model-ai/gpt.svg"
+// import claudeLogo from "@/assets/_icons-model-ai/claude.svg"
+// import geminiLogo from "@/assets/_icons-model-ai/gemini.svg"
 
 const models = [
   {

@@ -1,14 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import ChatInput from '@/components/ChatInput';
 import LogoAnimated from '@/components/LogoAnimated';
 import MessageFilePreview from '@/components/MessageFilePreview';
+import VirtualizedMessageList from '@/components/VirtualizedMessageList';
+import type { VirtualizedMessageListRef } from '@/components/VirtualizedMessageList';
 import { User, CircleStop } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { SidebarChat } from '@/components/SidebarChat';
 import { MessageActions } from '@/components/MessageActions';
 import { UserMessageActions } from '@/components/UserMessageActions';
+import ChatErrorBoundary from '@/components/ui/chat-error-boundary';
+import StreamingErrorBoundary from '@/components/ui/streaming-error-boundary';
+import { Spinner } from '@/components/ui/spinner';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
   SidebarProvider,
   SidebarInset,
@@ -23,10 +30,11 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { getConversationMessagesPaginated } from '@/services/chatService';
+import { getConversationMessagesPaginated, chatService } from '@/services/chatService';
 import type { ChatMessage, Conversation, ChatRequest } from '@/services/chatService';
 import { useChatStream } from '@/hooks/useChatStream';
-import StreamingMessage from '@/components/StreamingMessage';
+import type { StreamingMessage } from '@/hooks/useChatStream';
+import StreamingMessageComponent from '@/components/StreamingMessage';
 import TypingIndicator from '@/components/TypingIndicator';
 import { supabase } from '@/lib/supabase';
 import logger from '@/lib/clientLogger';
@@ -34,23 +42,41 @@ import logger from '@/lib/clientLogger';
 // Usando ChatMessage do serviço
 
 export default function SensoChatPage() {
+  const { conversationId } = useParams<{ conversationId?: string }>();
+  const navigate = useNavigate();
   const { userData } = useUser();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  
+  // Converter ChatMessage para StreamingMessage para o VirtualizedMessageList
+   const convertToStreamingMessages = (chatMessages: ChatMessage[]): StreamingMessage[] => {
+     return chatMessages.map(msg => ({
+       id: msg.id || `msg-${Date.now()}-${Math.random()}`,
+       content: msg.content,
+       role: msg.role as 'assistant',
+       isStreaming: false,
+       isComplete: true
+     }));
+   };
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isLoading] = useState(false);
   const [hasFirstMessage, setHasFirstMessage] = useState(false);
   const [newMessageId, setNewMessageId] = useState<string | null>(null);
   const [refreshSidebar, setRefreshSidebar] = useState(0); // Trigger para atualizar sidebar
-  const [selectedModel, setSelectedModel] = useState('openai'); // Estado do modelo selecionado
+  // Modelo padrão deve ser um modelo válido do combobox (não apenas provedor)
+  const [selectedModel, setSelectedModel] = useState('gpt-4o'); // Estado do modelo selecionado
   
-  // Estados para paginação de mensagens
-  const [currentPage, setCurrentPage] = useState(1);
+  // Estados para paginação de mensagens (cursor-based)
+  const [prevCursor, setPrevCursor] = useState<string | undefined>(undefined);
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
-  const [totalMessageCount, setTotalMessageCount] = useState(0);
+  const [hasPrevMessages, setHasPrevMessages] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
-  const { streamingMessage, isTyping, startStreaming, isStreaming, stopStreaming } = useChatStream();
+  const [isLoadingConversation, setIsLoadingConversation] = useState(false);
+  const debouncedIsLoadingConversation = useDebounce(isLoadingConversation, 50);
+  const [totalMessageCount, setTotalMessageCount] = useState(0);
+  const { streamingMessage, isTyping, startStreaming, isStreaming, stopStreaming, wasCancelled } = useChatStream();
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const virtualizedListRef = useRef<VirtualizedMessageListRef>(null);
 
   // Sincronizar currentUserId com userData
   useEffect(() => {
@@ -59,27 +85,81 @@ export default function SensoChatPage() {
     }
   }, [userData?.id]);
 
-  // Carregar mensagens de uma conversa com paginação
-  const loadMessages = async (conversationId: string, page: number = 1, reset: boolean = false) => {
+  // Carregar conversa da URL quando conversationId estiver presente
+  useEffect(() => {
+    const loadConversationFromUrl = async () => {
+      if (conversationId && currentUserId) {
+        // Mostrar interface imediatamente com loading
+        setIsLoadingMessages(true);
+        
+        try {
+          const context = await chatService.getConversationContext(conversationId);
+          
+          // Verificar se a conversa pertence ao usuário atual
+          if (context.conversation.user_id !== currentUserId) {
+            logger.error('Acesso negado: conversa não pertence ao usuário');
+            navigate('/chat');
+            return;
+          }
+          
+          setCurrentConversation(context.conversation);
+          setMessages(context.messages);
+          setHasFirstMessage(context.messages.length > 0);
+          
+          // Configurar paginação cursor-based
+          setPrevCursor(undefined);
+          setHasMoreMessages(context.totalMessages > 50);
+          setHasPrevMessages(false);
+          setTotalMessageCount(context.totalMessages);
+          
+          // Rolar para a mensagem mais recente
+          scrollToLatestMessage();
+          
+          logger.info('Conversa carregada da URL:', {
+            conversationId,
+            title: context.conversation.title,
+            messageCount: context.messages.length
+          });
+        } catch (error) {
+          logger.error('Erro ao carregar conversa da URL:', error);
+          navigate('/chat');
+        } finally {
+          setIsLoadingMessages(false);
+          setIsLoadingConversation(false);
+        }
+      }
+    };
+    
+    loadConversationFromUrl();
+  }, [conversationId, currentUserId, navigate]);
+
+  // Carregar mensagens de uma conversa com cursor-based pagination
+  const loadMessages = async (conversationId: string, cursor?: string, direction: 'forward' | 'backward' = 'forward', reset: boolean = false) => {
     setIsLoadingMessages(true);
     try {
-      const result = await getConversationMessagesPaginated(conversationId, page, 50);
+      const result = await getConversationMessagesPaginated(conversationId, cursor, 50, direction);
       
       if (reset) {
         setMessages(result.messages);
       } else {
-        setMessages(prev => [...result.messages, ...prev]); // Adicionar mensagens antigas no início
+        if (direction === 'backward') {
+          setMessages(prev => [...result.messages, ...prev]); // Adicionar mensagens antigas no início
+        } else {
+          setMessages(prev => [...prev, ...result.messages]); // Adicionar mensagens novas no final
+        }
       }
       
       setHasMoreMessages(result.hasMore);
-      setTotalMessageCount(result.totalCount);
-      setCurrentPage(result.currentPage);
+      setHasPrevMessages(result.hasPrev);
+      setPrevCursor(result.prevCursor);
+      setTotalMessageCount(messages.length + result.messages.length);
       
       logger.info('Messages loaded:', {
         conversationId,
-        page,
-        totalCount: result.totalCount,
+        cursor,
+        direction,
         hasMore: result.hasMore,
+        hasPrev: result.hasPrev,
         loadedCount: result.messages.length
       });
     } catch (error) {
@@ -91,46 +171,55 @@ export default function SensoChatPage() {
 
   // Carregar mais mensagens antigas
   const loadMoreMessages = () => {
-    if (!isLoadingMessages && hasMoreMessages && currentConversation?.id) {
-      loadMessages(currentConversation.id, currentPage + 1, false);
+    if (!isLoadingMessages && hasPrevMessages && currentConversation?.id && prevCursor) {
+      loadMessages(currentConversation.id, prevCursor, 'backward', false);
     }
   };
 
   // Handler para seleção de conversa na sidebar
   const handleConversationSelect = async (conversation: Conversation) => {
     try {
-      setCurrentConversation(conversation);
+      // Definir loading state imediatamente para feedback visual
+      setIsLoadingConversation(true);
       
-      // Reset estados de paginação
-      setCurrentPage(1);
-      setHasMoreMessages(false);
-      setTotalMessageCount(0);
+      // Limpar mensagens atuais e mostrar loading imediatamente
+      setMessages([]);
+      setIsLoadingMessages(true);
       
-      // Carregar primeira página de mensagens
-      await loadMessages(conversation.id!, 1, true);
+      // Navegar para a URL da conversa
+      navigate(`/chat/${conversation.id}`);
       
-      setHasFirstMessage(true);
-      
-      // Rolar para a mensagem mais recente após carregar
-      scrollToLatestMessage();
-      
-      logger.info('Conversation selected:', {
+      logger.info('Navegando para conversa:', {
         title: conversation.title,
         conversationId: conversation.id
       });
     } catch (error) {
-      logger.error('Erro ao carregar contexto da conversa:', error);
+      logger.error('Erro ao navegar para conversa:', error);
+      setIsLoadingMessages(false);
+      setIsLoadingConversation(false);
     }
   };
 
   // Handler para novo chat
   const handleNewChat = () => {
-    setCurrentConversation(null);
-    setMessages([]);
-    setHasFirstMessage(false);
-    setNewMessageId(null);
-    logger.info('Novo chat iniciado');
+    // Navegar para /chat sem parâmetros
+    navigate('/chat');
+    logger.info('Navegando para novo chat');
   };
+  
+  // Limpar estado quando não há conversationId na URL
+  useEffect(() => {
+    if (!conversationId) {
+      setCurrentConversation(null);
+      setMessages([]);
+      setHasFirstMessage(false);
+      setNewMessageId(null);
+      setPrevCursor(undefined);
+      setHasMoreMessages(false);
+      setHasPrevMessages(false);
+      setTotalMessageCount(0);
+    }
+  }, [conversationId]);
   
   // Verificar usuário autenticado
   useEffect(() => {
@@ -146,7 +235,12 @@ export default function SensoChatPage() {
   // Função para posicionar mensagem específica no topo da viewport
   const scrollToMessage = (messageId: string) => {
     setTimeout(() => {
-      if (messagesContainerRef.current) {
+      if (virtualizedListRef.current && messages.length > 0) {
+        const messageIndex = messages.findIndex(msg => msg.id === messageId);
+        if (messageIndex !== -1) {
+          virtualizedListRef.current.scrollToIndex(messageIndex);
+        }
+      } else if (messagesContainerRef.current) {
         const messageElement = document.getElementById(`message-${messageId}`);
         if (messageElement) {
           // Obter a posição da mensagem relativa ao container de scroll
@@ -166,7 +260,9 @@ export default function SensoChatPage() {
   // Função para rolar para a mensagem mais recente (última mensagem)
   const scrollToLatestMessage = () => {
     setTimeout(() => {
-      if (messagesContainerRef.current) {
+      if (virtualizedListRef.current && messages.length > 0) {
+        virtualizedListRef.current.scrollToBottom();
+      } else if (messagesContainerRef.current) {
         messagesContainerRef.current.scrollTo({
           top: messagesContainerRef.current.scrollHeight,
           behavior: 'smooth'
@@ -213,7 +309,8 @@ export default function SensoChatPage() {
   // Função handleMessageSent removida - não utilizada
 
   const handleConversationCreated = (conversation: Conversation) => {
-    setCurrentConversation(conversation);
+    // Navegar para a nova conversa
+    navigate(`/chat/${conversation.id}`);
     // Atualizar sidebar para mostrar a nova conversa
     setRefreshSidebar(prev => prev + 1);
   };
@@ -266,7 +363,8 @@ export default function SensoChatPage() {
     }
   };
 
-  const getProviderIcon = (provider: string) => {
+  const getProviderIcon = (provider?: string) => {
+    if (!provider) return '🤖';
     switch (provider) {
       case 'openai':
         return '🤖';
@@ -327,7 +425,7 @@ export default function SensoChatPage() {
                     className="bg-white rounded-2xl animate-smooth-fade-up mb-6"
                     style={{ animationDelay: '160ms', willChange: 'transform, opacity' }}
                   >
-              {messages.length === 0 ? (
+              {messages.length === 0 && !debouncedIsLoadingConversation && !conversationId ? (
                 <div
                   className="p-12 text-center animate-smooth-fade-up"
                   style={{ animationDelay: '220ms', willChange: 'transform, opacity' }}
@@ -350,8 +448,9 @@ export default function SensoChatPage() {
                     <button
                       onClick={loadMoreMessages}
                       disabled={isLoadingMessages}
-                      className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
+                      {isLoadingMessages && <Spinner size="sm" />}
                       {isLoadingMessages ? 'Carregando...' : 'Carregar mensagens anteriores'}
                     </button>
                   </div>
@@ -364,7 +463,16 @@ export default function SensoChatPage() {
                   </div>
                 )}
                 
-                {messages.map((message, idx) => (
+                {/* Virtual Scrolling para performance com muitas mensagens */}
+                {messages.length > 20 ? (
+                  <VirtualizedMessageList
+                    ref={virtualizedListRef}
+                    messages={convertToStreamingMessages(messages)}
+                    height={Math.min(600, messages.length * 120)}
+                    isLoadingConversation={debouncedIsLoadingConversation}
+                  />
+                ) : (
+                  messages.map((message, idx) => (
                     <div
                       key={message.id}
                       id={`message-${message.id}`}
@@ -424,7 +532,8 @@ export default function SensoChatPage() {
                         )}
                       </div>
                     </div>
-                  ))}
+                  ))
+                )}
                   
                   {/* Indicador de digitação - apenas quando não há streaming */}
                   {isTyping && !streamingMessage && (
@@ -439,7 +548,20 @@ export default function SensoChatPage() {
                   {streamingMessage && (
                     <div className="flex items-start">
                       <div className="inline-block max-w-fit">
-                         <StreamingMessage message={streamingMessage} getModelIcon={(model?: string) => getProviderIcon(model || 'openai')} modelUsed={selectedModel} />
+                        <StreamingErrorBoundary
+                          onRetryStreaming={() => {
+                            // Retry do streaming atual
+                            if (messages.length > 0) {
+                              const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+                              if (lastUserMessage?.content) {
+                                handleUserMessage(lastUserMessage);
+                              }
+                            }
+                          }}
+                          onPauseStreaming={() => stopStreaming()}
+                        >
+                          <StreamingMessageComponent message={streamingMessage} getModelIcon={(model?: string) => getProviderIcon(model || 'openai')} modelUsed={selectedModel} />
+                        </StreamingErrorBoundary>
                       </div>
                     </div>
                   )}
@@ -452,16 +574,33 @@ export default function SensoChatPage() {
               {/* Input do chat quando não há mensagens (posição normal) */}
               {!hasFirstMessage && (
                 <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-                  <ChatInput 
-                     onMessageSent={handleUserMessage}
-                     onConversationCreated={handleConversationCreated}
-                     currentConversationId={currentConversation?.id}
-                     currentUserId={currentUserId || undefined}
-                     isLoading={isLoading}
-                     chatStreamHook={{ streamingMessage, isTyping, startStreaming, isStreaming, stopStreaming }}
-                     selectedModel={selectedModel}
-                     onModelChange={setSelectedModel}
-                   />
+                  <ChatErrorBoundary 
+                    conversationId={currentConversation?.id}
+                    onRetryMessage={() => {
+                      // Retry da última mensagem se houver
+                      if (messages.length > 0) {
+                        const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+                        if (lastUserMessage?.content) {
+                          handleUserMessage(lastUserMessage);
+                        }
+                      }
+                    }}
+                    onClearChat={() => {
+                      setMessages([]);
+                      setHasFirstMessage(false);
+                    }}
+                  >
+                    <ChatInput 
+                       onMessageSent={handleUserMessage}
+                       onConversationCreated={handleConversationCreated}
+                       currentConversationId={currentConversation?.id}
+                       currentUserId={currentUserId || undefined}
+                       isLoading={isLoading}
+                       chatStreamHook={{ streamingMessage, isTyping, startStreaming, isStreaming, stopStreaming, wasCancelled }}
+                       selectedModel={selectedModel}
+                       onModelChange={setSelectedModel}
+                     />
+                  </ChatErrorBoundary>
                 </div>
               )}              
                 </div>
@@ -473,16 +612,33 @@ export default function SensoChatPage() {
             {hasFirstMessage && (
               <div className="py-6 flex justify-center px-4 sm:px-6 lg:px-8" style={{height: 'auto', minHeight: '240px'}}>
                 <div className="w-full max-w-4xl">
-                  <ChatInput 
-                     onMessageSent={handleUserMessage}
-                     onConversationCreated={handleConversationCreated}
-                     currentConversationId={currentConversation?.id}
-                     currentUserId={currentUserId || undefined}
-                     isLoading={isLoading}
-                     chatStreamHook={{ streamingMessage, isTyping, startStreaming, isStreaming, stopStreaming }}
-                     selectedModel={selectedModel}
-                     onModelChange={setSelectedModel}
-                   />
+                  <ChatErrorBoundary 
+                    conversationId={currentConversation?.id}
+                    onRetryMessage={() => {
+                      // Retry da última mensagem se houver
+                      if (messages.length > 0) {
+                        const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+                        if (lastUserMessage?.content) {
+                          handleUserMessage(lastUserMessage);
+                        }
+                      }
+                    }}
+                    onClearChat={() => {
+                      setMessages([]);
+                      setHasFirstMessage(false);
+                    }}
+                  >
+                    <ChatInput 
+                       onMessageSent={handleUserMessage}
+                       onConversationCreated={handleConversationCreated}
+                       currentConversationId={currentConversation?.id}
+                       currentUserId={currentUserId || undefined}
+                       isLoading={isLoading}
+                       chatStreamHook={{ streamingMessage, isTyping, startStreaming, isStreaming, stopStreaming, wasCancelled }}
+                       selectedModel={selectedModel}
+                       onModelChange={setSelectedModel}
+                     />
+                  </ChatErrorBoundary>
                 </div>
               </div>              
             )}

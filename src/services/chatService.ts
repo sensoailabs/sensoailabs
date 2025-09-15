@@ -548,8 +548,66 @@ class ChatService {
     }
   }
 
-  // Buscar conversas do usuário com paginação
+  // Buscar conversas do usuário com paginação cursor-based
   async getUserConversationsPaginated(
+    userId: string,
+    cursor?: string,
+    limit: number = 20
+  ): Promise<{
+    conversations: Conversation[];
+    nextCursor?: string;
+    hasMore: boolean;
+  }> {
+    try {
+      let query = supabase
+        .from('conversations')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .order('updated_at', { ascending: false })
+        .limit(limit + 1); // +1 para verificar se há mais
+
+      // Se há cursor, buscar registros anteriores ao cursor
+      if (cursor) {
+        query = query.lt('updated_at', cursor);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        logger.error('Error fetching paginated conversations', { error, userId, cursor, limit });
+        throw new Error('Failed to fetch conversations');
+      }
+
+      const conversations = data || [];
+      const hasMore = conversations.length > limit;
+      const actualConversations = hasMore ? conversations.slice(0, limit) : conversations;
+      const nextCursor = hasMore && actualConversations.length > 0 
+        ? actualConversations[actualConversations.length - 1].updated_at 
+        : undefined;
+
+      logger.info('Cursor-based conversations loaded', {
+        userId,
+        cursor,
+        limit,
+        hasMore,
+        loadedCount: actualConversations.length,
+        nextCursor
+      });
+
+      return {
+        conversations: actualConversations,
+        nextCursor,
+        hasMore
+      };
+    } catch (error) {
+      logger.error('Error in getUserConversationsPaginated', { error, userId, cursor, limit });
+      throw error;
+    }
+  }
+
+  // Buscar conversas do usuário com paginação (compatibilidade)
+  async getUserConversationsPaginatedLegacy(
     userId: string,
     page: number = 1,
     limit: number = 20
@@ -562,7 +620,6 @@ class ChatService {
     try {
       const offset = (page - 1) * limit;
 
-      // Primeiro, tentar buscar com o userId original
       let { data, error, count } = await supabase
         .from('conversations')
         .select('*', { count: 'exact' })
@@ -570,8 +627,6 @@ class ChatService {
         .eq('is_active', true)
         .order('updated_at', { ascending: false })
         .range(offset, offset + limit - 1);
-
-
 
       if (error) {
         logger.error('Error fetching paginated conversations', { error, userId, page, limit });
@@ -581,15 +636,6 @@ class ChatService {
       const totalCount = count || 0;
       const hasMore = offset + limit < totalCount;
 
-      logger.info('Paginated conversations loaded', {
-        userId,
-        page,
-        limit,
-        totalCount,
-        hasMore,
-        loadedCount: data?.length || 0
-      });
-
       return {
         conversations: data || [],
         totalCount,
@@ -597,7 +643,7 @@ class ChatService {
         currentPage: page
       };
     } catch (error) {
-      logger.error('Error in getUserConversationsPaginated', { error, userId, page, limit });
+      logger.error('Error in getUserConversationsPaginatedLegacy', { error, userId, page, limit });
       throw error;
     }
   }
@@ -710,8 +756,109 @@ class ChatService {
     }
   }
 
-  // Buscar mensagens de uma conversa com paginação
+  // Buscar mensagens de uma conversa com paginação cursor-based
   async getConversationMessagesPaginated(
+    conversationId: string,
+    cursor?: string,
+    limit: number = 50,
+    direction: 'forward' | 'backward' = 'forward'
+  ): Promise<{
+    messages: ChatMessage[];
+    nextCursor?: string;
+    prevCursor?: string;
+    hasMore: boolean;
+    hasPrev: boolean;
+  }> {
+    try {
+      let query = supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .limit(limit + 1); // +1 para verificar se há mais
+
+      if (direction === 'forward') {
+        query = query.order('created_at', { ascending: true });
+        if (cursor) {
+          query = query.gt('created_at', cursor);
+        }
+      } else {
+        query = query.order('created_at', { ascending: false });
+        if (cursor) {
+          query = query.lt('created_at', cursor);
+        }
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        logger.error('Error fetching paginated messages', { error, conversationId, cursor, limit });
+        throw new Error('Failed to fetch messages');
+      }
+
+      let messages = data || [];
+      const hasMore = messages.length > limit;
+      const actualMessages = hasMore ? messages.slice(0, limit) : messages;
+      
+      // Se direção é backward, reverter a ordem para manter cronológica
+      if (direction === 'backward') {
+        actualMessages.reverse();
+      }
+      
+      // Buscar file_attachments para cada mensagem
+      for (const message of actualMessages) {
+        if (message.id) {
+          const attachments = await this.getMessageAttachments(message.id);
+          message.file_attachments = attachments;
+        }
+      }
+
+      const nextCursor = hasMore && actualMessages.length > 0 && direction === 'forward'
+        ? actualMessages[actualMessages.length - 1].created_at
+        : undefined;
+      
+      const prevCursor = hasMore && actualMessages.length > 0 && direction === 'backward'
+        ? actualMessages[0].created_at
+        : undefined;
+
+      // Verificar se há mensagens anteriores (para hasPrev)
+      let hasPrev = false;
+      if (actualMessages.length > 0 && direction === 'forward') {
+        const { data: prevCheck } = await supabase
+          .from('messages')
+          .select('id')
+          .eq('conversation_id', conversationId)
+          .lt('created_at', actualMessages[0].created_at)
+          .limit(1);
+        hasPrev = (prevCheck?.length || 0) > 0;
+      }
+
+      logger.info('Cursor-based messages loaded', {
+        conversationId,
+        cursor,
+        limit,
+        direction,
+        hasMore,
+        hasPrev,
+        loadedCount: actualMessages.length,
+        nextCursor,
+        prevCursor
+      });
+
+      return {
+        messages: actualMessages,
+        nextCursor,
+        prevCursor,
+        hasMore,
+        hasPrev
+      };
+    } catch (error) {
+      logger.error('Error in getConversationMessagesPaginated', { error, conversationId, cursor, limit });
+      throw error;
+    }
+  }
+
+  // Buscar mensagens de uma conversa com paginação (compatibilidade)
+  async getConversationMessagesPaginatedLegacy(
     conversationId: string,
     page: number = 1,
     limit: number = 50
@@ -724,7 +871,6 @@ class ChatService {
     try {
       const offset = (page - 1) * limit;
 
-      // Buscar mensagens paginadas (pegamos limit + 1 para verificar se há mais)
       const { data, error } = await supabase
         .from('messages')
         .select('*')
@@ -749,17 +895,7 @@ class ChatService {
         }
       }
       
-      // Estimativa do total baseada na paginação
       const totalCount = hasMore ? (page * limit) + 1 : offset + actualMessages.length;
-
-      logger.info('Paginated messages loaded', {
-        conversationId,
-        page,
-        limit,
-        totalCount,
-        hasMore,
-        loadedCount: actualMessages.length
-      });
 
       return {
         messages: actualMessages,
@@ -768,7 +904,7 @@ class ChatService {
         currentPage: page
       };
     } catch (error) {
-      logger.error('Error in getConversationMessagesPaginated', { error, conversationId, page, limit });
+      logger.error('Error in getConversationMessagesPaginatedLegacy', { error, conversationId, page, limit });
       throw error;
     }
   }
@@ -1305,11 +1441,33 @@ export const chatService = new ChatService();
 export const processChat = (request: ChatRequest) => chatService.processChat(request);
 export const processChatStream = (request: ChatRequest) => chatService.processChatStream(request);
 export const getUserConversations = (userId: string) => chatService.getUserConversations(userId);
+
+// Cursor-based pagination (nova versão otimizada)
 export const getUserConversationsPaginated = (
+  userId: string,
+  cursor?: string,
+  limit?: number
+) => chatService.getUserConversationsPaginated(userId, cursor, limit);
+
+export const getConversationMessagesPaginated = (
+  conversationId: string,
+  cursor?: string,
+  limit?: number,
+  direction?: 'forward' | 'backward'
+) => chatService.getConversationMessagesPaginated(conversationId, cursor, limit, direction);
+
+// Legacy pagination (compatibilidade)
+export const getUserConversationsPaginatedLegacy = (
   userId: string,
   page?: number,
   limit?: number
-) => chatService.getUserConversationsPaginated(userId, page, limit);
+) => chatService.getUserConversationsPaginatedLegacy(userId, page, limit);
+
+export const getConversationMessagesPaginatedLegacy = (
+  conversationId: string,
+  page?: number,
+  limit?: number
+) => chatService.getConversationMessagesPaginatedLegacy(conversationId, page, limit);
 export const searchUserConversations = (
   userId: string,
   searchTerm?: string,
@@ -1319,11 +1477,6 @@ export const searchUserConversations = (
   offset?: number
 ) => chatService.searchUserConversations(userId, searchTerm, modelFilter, projectFilter, limit, offset);
 export const getConversationMessages = (conversationId: string) => chatService.getConversationMessages(conversationId);
-export const getConversationMessagesPaginated = (
-  conversationId: string,
-  page?: number,
-  limit?: number
-) => chatService.getConversationMessagesPaginated(conversationId, page, limit);
 export const getConversationContext = (conversationId: string) => chatService.getConversationContext(conversationId);
 export const deleteConversation = (conversationId: string, userId: string) => 
   chatService.deleteConversation(conversationId, userId);

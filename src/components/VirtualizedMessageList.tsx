@@ -33,7 +33,13 @@ export interface VirtualizedMessageListRef {
 }
 
 // Wrapper component for react-window compatibility
-const MessageItemWrapper = ({ index, style, messages, ariaAttributes }: MessageItemRendererProps) => {
+const MessageItemWrapper = ({ index, style, data }: { index: number; style: React.CSSProperties; data: { messages: StreamingMessageType[]; isLoading: boolean } }) => {
+  const { messages, isLoading } = data;
+  const ariaAttributes = {
+    "aria-posinset": index + 1,
+    "aria-setsize": messages.length,
+    role: "listitem" as const
+  };
   if (index >= messages.length) {
     return (
       <div style={style} className="p-4" {...ariaAttributes}>
@@ -70,16 +76,24 @@ MessageItemWrapper.displayName = 'MessageItemWrapper';
 const VirtualizedMessageList = forwardRef<VirtualizedMessageListRef, VirtualizedMessageListProps>(
     ({ messages, height = 400, isLoading = false, isLoadingConversation = false }, ref) => {
     const listRef = useRef<any>(null);
+    
+    // Garantir que messages seja sempre um array válido
+    const safeMessages = Array.isArray(messages) ? messages : [];
 
     useImperativeHandle(ref, () => ({
       scrollToBottom: () => {
-        if (listRef.current && messages.length > 0) {
-          listRef.current.scrollToRow({ index: messages.length - 1, align: 'end' });
+        if (listRef.current && safeMessages.length > 0) {
+          // Usar requestAnimationFrame para garantir que o DOM foi atualizado
+          requestAnimationFrame(() => {
+            listRef.current?.scrollToItem(safeMessages.length - 1, 'end');
+          });
         }
       },
       scrollToIndex: (index: number) => {
-        if (listRef.current) {
-          listRef.current.scrollToItem(index, 'start');
+        if (listRef.current && index >= 0 && index < safeMessages.length) {
+          requestAnimationFrame(() => {
+            listRef.current?.scrollToItem(index, 'start');
+          });
         }
       }
     }));
@@ -88,7 +102,7 @@ const VirtualizedMessageList = forwardRef<VirtualizedMessageListRef, Virtualized
     const ITEM_HEIGHT = 120;
 
     // Show empty state when there are no messages and we're not loading
-    if (messages.length === 0 && !isLoading) {
+    if (safeMessages.length === 0 && !isLoading) {
       return (
         <div style={{ height }} className="flex items-center justify-center text-gray-500">
           <p>No messages yet. Start a conversation!</p>
@@ -105,18 +119,25 @@ const VirtualizedMessageList = forwardRef<VirtualizedMessageListRef, Virtualized
       );
     }
 
-    const totalItems = messages.length + (isLoading ? 1 : 0);
+    const totalItems = safeMessages.length + (isLoading ? 1 : 0);
+    
+    // Garantir que itemData seja sempre um objeto válido
+    const itemData = {
+      messages: safeMessages,
+      isLoading: Boolean(isLoading)
+    };
 
     return (
-      <List<MessageRowProps>
-          listRef={listRef}
+      <List
+          ref={listRef}
           style={{ height, overflowX: 'hidden' }}
-          rowCount={totalItems}
-          rowHeight={ITEM_HEIGHT}
-          rowProps={{ messages, isLoading }}
-          rowComponent={MessageItemWrapper}
+          itemCount={totalItems}
+          itemSize={ITEM_HEIGHT}
+          itemData={itemData}
           className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
-        />
+        >
+          {MessageItemWrapper}
+        </List>
     );
   }
 );

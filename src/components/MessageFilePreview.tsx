@@ -77,11 +77,11 @@ const getFileIcon = (file: FileAttachment) => {
 
   for (const { icon: Icon, conditions, color } of Object.values(iconMap)) {
     if (conditions(fileType, fileName, extension)) {
-      return <Icon className={`size-4 ${color}`} />
+      return <Icon className="size-5 text-gray-700" />
     }
   }
 
-  return <FileIcon className="size-4 text-gray-500" />
+  return <FileIcon className="size-5 text-gray-700" />
 }
 
 const getFilePreview = (file: FileAttachment) => {
@@ -165,19 +165,23 @@ export default function MessageFilePreview({ files }: MessageFilePreviewProps) {
         {files.map((file, index) => (
           <div
             key={file.id || `file-${index}`}
-            className="bg-background relative w-16 h-20 rounded-lg border group hover:shadow-md transition-shadow flex-shrink-0 cursor-pointer"
+            className="bg-gray-50 border border-gray-200 rounded-lg p-2 flex items-center gap-2 min-w-[160px] max-w-[220px] cursor-pointer hover:bg-gray-100 transition-colors"
             onClick={() => handleFileClick(file)}
             title={`${file.file_name} (${formatBytes(file.file_size)})`}
           >
-            <div className="w-full h-12 overflow-hidden rounded-t-lg">
-              {getFilePreview(file)}
+            {/* Ícone do arquivo */}
+            <div className="flex-shrink-0">
+              {getFileIcon(file)}
             </div>
             
-            {/* Nome do arquivo dentro da área da mensagem */}
-            <div className="absolute bottom-0 left-0 right-0 h-8 bg-background rounded-b-lg border-t px-1 py-1 flex items-center justify-center">
-              <span className="text-[9px] text-gray-600 truncate text-center leading-tight">
+            {/* Nome e tamanho do arquivo */}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-gray-900 truncate">
                 {file.file_name}
-              </span>
+              </p>
+              <p className="text-[10px] text-gray-500">
+                {formatBytes(file.file_size)}
+              </p>
             </div>
           </div>
         ))}

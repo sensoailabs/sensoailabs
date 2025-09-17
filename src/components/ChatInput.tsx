@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 // import { Checkbox } from "@/components/ui/checkbox"; - removido, não utilizado
 import { ModelCombobox } from "@/components/ui/combobox";
 import UploadErrorBoundary from "@/components/ui/upload-error-boundary";
+import { ShineBorder } from "@/components/magicui/shine-border";
 import { 
   Paperclip, 
   Telescope, 
@@ -34,6 +35,8 @@ interface ChatInputProps {
   chatStreamHook?: ReturnType<typeof useChatStream>;
   selectedModel?: string;
   onModelChange?: (model: string) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 export default function ChatInput({ 
@@ -45,12 +48,15 @@ export default function ChatInput({
   enableStreaming = true,
   chatStreamHook,
   selectedModel = 'gpt-4o',
-  onModelChange
+  onModelChange,
+  onFocus,
+  onBlur
 }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const internalSelectedModel = selectedModel;
   const [deepResearch, setDeepResearch] = useState(false);
   const [webSearch, setWebSearch] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   // const [investigateMode, setInvestigateMode] = useState(false); - removido, não utilizado
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -238,6 +244,12 @@ export default function ChatInput({
     <div className="w-full max-w-4xl mx-auto">
       {/* Container integrado do Input e FileList */}
       <div className="relative bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+        <ShineBorder 
+          className="absolute inset-0 pointer-events-none" 
+          shineColor={["#4E67FF", "#98D4F8", "#6366F1"]} 
+          borderWidth="1px"
+          isVisible={isFocused}
+        />
         {/* Lista de arquivos selecionados */}
         {files.length > 0 && (
           <div className="border-b border-gray-100">
@@ -270,7 +282,14 @@ export default function ChatInput({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            // onFocus e onBlur removidos - setIsFocused não utilizado
+            onFocus={(e) => {
+              setIsFocused(true);
+              onFocus?.();
+            }}
+            onBlur={(e) => {
+              setIsFocused(false);
+              onBlur?.();
+            }}
             placeholder="Pergunte-me qualquer coisa..."
             className={`min-h-[24px] max-h-[300px] resize-none border-0 bg-transparent p-4 text-base placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 ${
                isOptimizing ? 'optimizing-text' : ''

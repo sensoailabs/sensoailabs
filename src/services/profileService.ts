@@ -43,13 +43,21 @@ class ProfileService {
 
   async updateProfile(userId: string, updates: UpdateUserProfile): Promise<boolean> {
     try {
+      // Obter dados do usuário para pegar o numeric_id
+      const userData = await authService.getUserData();
+      
+      if (!userData || !userData.numeric_id) {
+        console.error('Erro: numeric_id não encontrado para o usuário');
+        return false;
+      }
+
       const { error } = await supabase
         .from('users')
         .update({
           ...updates,
           updated_at: new Date().toISOString()
         })
-        .eq('id', userId);
+        .eq('id', userData.numeric_id);
 
       if (error) {
         console.error('Erro ao atualizar perfil:', error);
@@ -119,11 +127,16 @@ class ProfileService {
         throw new Error('Erro ao alterar senha');
       }
 
-      // Atualizar timestamp na tabela users
-      await supabase
-        .from('users')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', userId);
+      // Obter dados do usuário para pegar o numeric_id
+      const userData = await authService.getUserData();
+      
+      if (userData && userData.numeric_id) {
+        // Atualizar timestamp na tabela users
+        await supabase
+          .from('users')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', userData.numeric_id);
+      }
 
     } catch (error: any) {
       console.error('Erro ao alterar senha:', error);
@@ -133,11 +146,19 @@ class ProfileService {
 
   async deleteAvatar(userId: string): Promise<boolean> {
     try {
+      // Obter dados do usuário para pegar o numeric_id
+      const userData = await authService.getUserData();
+      
+      if (!userData || !userData.numeric_id) {
+        console.error('Erro: numeric_id não encontrado para o usuário');
+        return false;
+      }
+
       // Buscar a URL atual da foto
       const { data: user } = await supabase
         .from('users')
         .select('photo_url')
-        .eq('id', userId)
+        .eq('id', userData.numeric_id)
         .single();
 
       if (user?.photo_url) {
@@ -159,7 +180,7 @@ class ProfileService {
           photo_url: null,
           updated_at: new Date().toISOString()
         })
-        .eq('id', userId);
+        .eq('id', userData.numeric_id);
 
       if (error) {
         console.error('Erro ao remover foto do perfil:', error);

@@ -50,6 +50,7 @@ import TypingIndicator from '@/components/TypingIndicator';
 import { supabase } from '@/lib/supabase';
 import logger from '@/lib/clientLogger';
 import GradientAnimation from '@/components/GradientAnimation';
+import AiAnimation from '@/components/AiAnimation';
 
 // Usando ChatMessage do serviço
 
@@ -439,7 +440,7 @@ export default function SensoChatPage() {
   };
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <AppSidebar />
       <SidebarInset>
         <div className="flex overflow-hidden" style={{height: 'calc(100vh - 16px)'}}>
@@ -555,8 +556,11 @@ export default function SensoChatPage() {
                   className="p-12 text-center animate-smooth-fade-up"
                   style={{ animationDelay: '220ms', willChange: 'transform, opacity' }}
                 >
-                  <div className="mx-auto mb-4 flex justify-center animate-smooth-fade-up" style={{ animationDelay: '260ms' }}>
-                    <LogoAnimated />
+                  <div className="mx-auto mb-4 relative flex items-center justify-center animate-smooth-fade-up" style={{ animationDelay: '260ms' }}>
+                    <AiAnimation isVisible={true} />
+                    <div className="absolute inset-0 flex items-center justify-center z-10">
+                      <LogoAnimated />
+                    </div>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2 animate-smooth-fade-up" style={{ animationDelay: '300ms' }}>
                     Boas vindas ao Senso Chat
@@ -729,7 +733,11 @@ export default function SensoChatPage() {
             </div>
 
             {/* Animação gradient na parte inferior */}
-            <GradientAnimation isVisible={isStreaming || isTyping} />
+            <div className="flex justify-center px-4 sm:px-6 lg:px-8">
+              <div className="w-full max-w-4xl ml-48">
+                <GradientAnimation isVisible={isStreaming || isTyping} />
+              </div>
+            </div>
 
             {/* Input do chat fixo na parte inferior (após primeira mensagem) */}
             {hasFirstMessage && !debouncedIsLoadingConversation && (

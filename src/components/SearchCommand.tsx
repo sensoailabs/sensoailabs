@@ -7,6 +7,11 @@ import {
   Grid3X3,
   User,
 } from "lucide-react"
+import { cn } from "@/lib/utils"
+import {
+  SidebarMenuItem,
+  SidebarMenuButton,
+} from "@/components/ui/sidebar"
 
 import {
   CommandDialog,
@@ -26,7 +31,11 @@ import iconAppAnonimizador from '../assets/_icons-modulos/icon-app-anonimizador.
 import iconAppSensoChat from '../assets/_icons-modulos/icon-app-senso-chat.png'
 import iconAppRecrutamento from '../assets/_icons-modulos/icon-app-recrutamento.png'
 
-export default function SearchCommand() {
+interface SearchCommandProps {
+  isCollapsed?: boolean
+}
+
+export default function SearchCommand({ isCollapsed = false }: SearchCommandProps) {
   const [open, setOpen] = React.useState(false)
   const [showEditProfile, setShowEditProfile] = React.useState(false)
 
@@ -65,11 +74,29 @@ export default function SearchCommand() {
     setShowEditProfile(true)
   }
 
+  if (isCollapsed) {
+    return (
+      <SidebarMenuItem>
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Clique no ícone de pesquisa (collapsed)');
+            setOpen(true);
+          }}
+          className="w-8 h-8 p-0 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+        >
+          <SearchIcon className="h-4 w-4" />
+        </button>
+      </SidebarMenuItem>
+    )
+  }
+
   return (
     <>
       <button
-        className="bg-white border-gray-200/50 text-foreground placeholder:text-muted-foreground/70 focus-visible:border-primary/50 focus-visible:ring-primary/20 inline-flex h-9 w-80 rounded-full border px-3 py-2 text-sm shadow-sm transition-[color,box-shadow] outline-none focus-visible:ring-[3px] hover:shadow-md"
         onClick={() => setOpen(true)}
+        className="w-full h-9 px-3 py-2 text-sm bg-background border border-input rounded-full shadow-sm hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring flex items-center justify-center transition-all duration-200"
       >
         <span className="flex grow items-center">
           <SearchIcon

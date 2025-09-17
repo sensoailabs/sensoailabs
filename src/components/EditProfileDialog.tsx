@@ -34,7 +34,7 @@ interface EditProfileDialogProps {
   children: React.ReactNode
 }
 
-export default function EditProfileDialog({ children }: EditProfileDialogProps) {
+function EditProfileDialog({ children }: EditProfileDialogProps) {
   const id = useId()
   const { refreshUserData } = useUser()
   const { showNotification } = useGlobalNotification()
@@ -617,3 +617,6 @@ function Avatar({ user, onFileSelect, selectedFile }: {
     </div>
   )
 }
+
+export default EditProfileDialog
+export { EditProfileDialog }

@@ -15,19 +15,19 @@ const LogoAnimated: React.FC = () => {
           <defs>
             {/* Gradientes corrigidos conforme especificação */}
             <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="0%" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#4E67FF" className="gradient-stop-1">
+              <stop offset="0%" stopColor="#FFFFFF" className="gradient-stop-1">
                 <animate attributeName="stop-color" 
-                  values="#4E67FF;#4EAFFF;#98D4F8;#4EAFFF;#4E67FF" 
+                  values="#FFFFFF;#F8F9FA;#E9ECEF;#F8F9FA;#FFFFFF" 
                   dur="8s" repeatCount="indefinite"/>
               </stop>
-              <stop offset="79.07%" stopColor="#4EAFFF" className="gradient-stop-2">
+              <stop offset="79.07%" stopColor="#F8F9FA" className="gradient-stop-2">
                 <animate attributeName="stop-color" 
-                  values="#4EAFFF;#98D4F8;#4E67FF;#6CCFFF;#4EAFFF" 
+                  values="#F8F9FA;#E9ECEF;#DEE2E6;#E9ECEF;#F8F9FA" 
                   dur="7s" repeatCount="indefinite"/>
               </stop>
-              <stop offset="102.23%" stopColor="#98D4F8" className="gradient-stop-3">
+              <stop offset="102.23%" stopColor="#E9ECEF" className="gradient-stop-3">
                 <animate attributeName="stop-color" 
-                  values="#98D4F8;#4E67FF;#4EAFFF;#B8F4F8;#98D4F8" 
+                  values="#E9ECEF;#DEE2E6;#CED4DA;#DEE2E6;#E9ECEF" 
                   dur="9s" repeatCount="indefinite"/>
               </stop>
               <animateTransform attributeName="gradientTransform" 
@@ -37,19 +37,19 @@ const LogoAnimated: React.FC = () => {
             </linearGradient>
             
             <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="0%" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#4E67FF" className="gradient-stop-4">
+              <stop offset="0%" stopColor="#FFFFFF" className="gradient-stop-4">
                 <animate attributeName="stop-color" 
-                  values="#4E67FF;#6B73FF;#4EAFFF;#5A7FFF;#4E67FF" 
+                  values="#FFFFFF;#F8F9FA;#E9ECEF;#F8F9FA;#FFFFFF" 
                   dur="8.5s" repeatCount="indefinite"/>
               </stop>
-              <stop offset="79.07%" stopColor="#4EAFFF" className="gradient-stop-5">
+              <stop offset="79.07%" stopColor="#F8F9FA" className="gradient-stop-5">
                 <animate attributeName="stop-color" 
-                  values="#4EAFFF;#5BBFFF;#98D4F8;#6CCFFF;#4EAFFF" 
+                  values="#F8F9FA;#E9ECEF;#DEE2E6;#E9ECEF;#F8F9FA" 
                   dur="7.5s" repeatCount="indefinite"/>
               </stop>
-              <stop offset="102.23%" stopColor="#98D4F8" className="gradient-stop-6">
+              <stop offset="102.23%" stopColor="#E9ECEF" className="gradient-stop-6">
                 <animate attributeName="stop-color" 
-                  values="#98D4F8;#A8E4F8;#4E67FF;#C8E4F8;#98D4F8" 
+                  values="#E9ECEF;#DEE2E6;#CED4DA;#DEE2E6;#E9ECEF" 
                   dur="9.5s" repeatCount="indefinite"/>
               </stop>
               <animateTransform attributeName="gradientTransform" 
@@ -59,19 +59,19 @@ const LogoAnimated: React.FC = () => {
             </linearGradient>
 
             <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="0%" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#4E67FF" className="gradient-stop-7">
+              <stop offset="0%" stopColor="#FFFFFF" className="gradient-stop-7">
                 <animate attributeName="stop-color" 
-                  values="#4E67FF;#5A7FFF;#6B73FF;#4EAFFF;#4E67FF" 
+                  values="#FFFFFF;#F8F9FA;#E9ECEF;#F8F9FA;#FFFFFF" 
                   dur="7.2s" repeatCount="indefinite"/>
               </stop>
-              <stop offset="79.07%" stopColor="#4EAFFF" className="gradient-stop-8">
+              <stop offset="79.07%" stopColor="#F8F9FA" className="gradient-stop-8">
                 <animate attributeName="stop-color" 
-                  values="#4EAFFF;#6CCFFF;#5BBFFF;#98D4F8;#4EAFFF" 
+                  values="#F8F9FA;#E9ECEF;#DEE2E6;#E9ECEF;#F8F9FA" 
                   dur="8.8s" repeatCount="indefinite"/>
               </stop>
-              <stop offset="102.23%" stopColor="#98D4F8" className="gradient-stop-9">
+              <stop offset="102.23%" stopColor="#E9ECEF" className="gradient-stop-9">
                 <animate attributeName="stop-color" 
-                  values="#98D4F8;#B8F4F8;#A8E4F8;#4E67FF;#98D4F8" 
+                  values="#E9ECEF;#DEE2E6;#CED4DA;#DEE2E6;#E9ECEF" 
                   dur="10s" repeatCount="indefinite"/>
               </stop>
               <animateTransform attributeName="gradientTransform" 
@@ -180,7 +180,7 @@ const LogoAnimated: React.FC = () => {
       <style dangerouslySetInnerHTML={{
         __html: `
           .logo-container {
-            filter: drop-shadow(0 0 12px rgba(78, 175, 255, 0.3));
+            filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.3));
             animation: logoBreath 4s ease-in-out infinite;
           }
           
@@ -188,11 +188,11 @@ const LogoAnimated: React.FC = () => {
           @keyframes logoBreath {
             0%, 100% { 
               transform: scale(1);
-              filter: drop-shadow(0 0 12px rgba(78, 175, 255, 0.3));
+              filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.3));
             }
             50% { 
               transform: scale(1.04);
-              filter: drop-shadow(0 0 20px rgba(78, 175, 255, 0.5));
+              filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.5));
             }
           }
           
@@ -254,7 +254,7 @@ const LogoAnimated: React.FC = () => {
           
           /* Aura de respiração mais intensa */
           .neural-aura {
-            background: radial-gradient(circle, rgba(78, 175, 255, 0.12) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, transparent 70%);
             border-radius: 50%;
             animation: auraBreath 5s ease-in-out infinite;
           }
@@ -277,10 +277,10 @@ const LogoAnimated: React.FC = () => {
           
           @keyframes strokePulse {
             0%, 100% { 
-              filter: drop-shadow(0 0 4px rgba(78, 175, 255, 0.4));
+              filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
             }
             50% { 
-              filter: drop-shadow(0 0 8px rgba(78, 175, 255, 0.8));
+              filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
             }
           }
         `
